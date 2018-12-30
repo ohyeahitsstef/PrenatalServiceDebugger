@@ -1,0 +1,12 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:PrenatalServiceDebugger"
+                    xmlns:System="clr-namespace:System;assembly=mscorlib">
+    <System:String x:Key="RequiresAdministrativePrivilegesMessageTitle">Prenatal Service Debugger</System:String>
+    <System:String x:Key="RequiresAdministrativePrivilegesMessage">The program must be started with administrative privileges.</System:String>
+    <System:String x:Key="RestartForServiceTimeoutQuestionTitle">Prenatal Service Debugger</System:String>
+    <System:String x:Key="RestartForServiceTimeoutQuestion" xml:space="preserve">A restart is required to apply the new service start-up timeout.
+
+Do you want to restart now?</System:String>
+    <System:String x:Key="RestartForServiceTimeoutMessage">The system will restart to apply a new service start-up timeout.</System:String>
+</ResourceDictionary>
