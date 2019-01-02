@@ -15,6 +15,7 @@ namespace PrenatalServiceDebugger
     using System.Text.RegularExpressions;
     using System.Windows;
     using System.Windows.Input;
+    using System.Windows.Media;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -60,6 +61,12 @@ namespace PrenatalServiceDebugger
             this.useCustomServiceTimeout = this.customServiceTimeout != SystemUtils.ServiceTimeoutDefault;
 
             this.InitializeComponent();
+
+            // Hide info field for service timeout, if not necessary.
+            if (this.useCustomServiceTimeout && this.customServiceTimeout > SystemUtils.ServiceTimeoutDefault * 10)
+            {
+                this.infoField.Visibility = Visibility.Collapsed;
+            }
         }
 
         /// <inheritdoc/>
@@ -114,6 +121,11 @@ namespace PrenatalServiceDebugger
                 return this.setServiceTimeoutCommand ?? (this.setServiceTimeoutCommand = new DelegateCommand(() => this.ExecuteSetServiceTimeout(), () => true));
             }
         }
+
+        /// <summary>
+        /// Gets the image to be shown in the info field in the dialog.
+        /// </summary>
+        public ImageSource InfoImage { get => SystemUtils.GetSystemIcon(SystemUtils.SystemIcon.Warning, SystemUtils.SystemIconSize.Small); }
 
         /// <summary>
         /// Raises <see cref="PropertyChanged"/> event.
