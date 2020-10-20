@@ -18,6 +18,8 @@ namespace PrenatalServiceDebugger
     /// </summary>
     public partial class App : Application
     {
+        private Window window;
+
         /// <summary>
         /// The start-up handler used by the application (set in XAML).
         /// </summary>
@@ -97,14 +99,12 @@ namespace PrenatalServiceDebugger
                 }
                 else if (args.Args.Length > 1 && args.Args[0] == "--Wait")
                 {
-                    using (var window = new WaitWindow
+                    this.window = new WaitWindow
                     {
                         ApplicationName = args.Args.Length > 1 ? args.Args[1] : string.Empty,
                         TimeWaitedInPercent = 50,
-                    })
-                    {
-                        window.Show();
-                    }
+                    };
+                    this.window.Show();
                 }
                 else
                 {
@@ -141,8 +141,8 @@ namespace PrenatalServiceDebugger
                     //       1. Check service timeout and prompt user to change it and restart system
                     // TODO: Test restart when timeout is changed
                     // TODO: remove logs
-                    var window = new MainWindow();
-                    window.Show();
+                    this.window = new MainWindow();
+                    this.window.Show();
                 }
             }
             catch (Exception e)
