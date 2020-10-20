@@ -12,6 +12,7 @@ namespace PrenatalServiceDebugger
     using System.Globalization;
     using System.Linq;
     using System.Reflection;
+    using System.Security;
     using System.ServiceProcess;
     using System.Text.RegularExpressions;
     using System.Windows;
@@ -148,10 +149,17 @@ namespace PrenatalServiceDebugger
                     ImagePath = imagePath,
                     FileName = fileName,
                     DisplayName = $"{serviceController.DisplayName} ({fileName})",
-                    IsDebuggerSet = SystemUtils.IsIfeoDebuggerSet(fileName, Assembly.GetExecutingAssembly().Location),
                 };
 
-                services.Add(service);
+                try
+                {
+                    service.IsDebuggerSet = SystemUtils.IsIfeoDebuggerSet(fileName, Assembly.GetExecutingAssembly().Location);
+                    services.Add(service);
+                }
+                catch (Exception e) when (e is SecurityException || e is UnauthorizedAccessException)
+                {
+                    // Just ignore exception (service will not be added to list).
+                }
             }
 
             return services.OrderBy(x => x.DisplayName).ToList();
