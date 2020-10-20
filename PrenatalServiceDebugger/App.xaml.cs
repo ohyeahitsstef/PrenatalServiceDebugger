@@ -14,24 +14,24 @@ namespace PrenatalServiceDebugger
     using System.Windows;
 
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// Interaction logic for App.xaml.
     /// </summary>
     public partial class App : Application
     {
         /// <summary>
-        /// The start-up handler used by the application (set in XAML)
+        /// The start-up handler used by the application (set in XAML).
         /// </summary>
         /// <param name="sender">The sender.</param>
         /// <param name="args">The application start-up event arguments.</param>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times", Justification = "False-positive: ImageFileExecutionOptionsDebuggerBypass may not be disposed multiple times.")]
         private void StartupHandler(object sender, StartupEventArgs args)
         {
-            File.AppendAllText(@"C:\Unencrypted\Workbench\Operating Table\pnsd.log", string.Join(", ", args.Args) + Environment.NewLine);
+            File.AppendAllText(@".\pnsd.log", string.Join(", ", args.Args) + Environment.NewLine);
             try
             {
                 if (args.Args.Length > 1 && args.Args[0] == "--Debug")
                 {
-                    File.AppendAllText(@"C:\Unencrypted\Workbench\Operating Table\pnsd.log", "Debugging" + Environment.NewLine);
+                    File.AppendAllText(@".\pnsd.log", "Debugging" + Environment.NewLine);
                     if (!SystemUtils.IsAdministrator() && !SystemUtils.IsLocalSystem())
                     {
                         MessageBox.Show(
@@ -43,15 +43,15 @@ namespace PrenatalServiceDebugger
                         return;
                     }
 
-                    File.AppendAllText(@"C:\Unencrypted\Workbench\Operating Table\pnsd.log", "As System service" + Environment.NewLine);
+                    File.AppendAllText(@".\pnsd.log", "As System service" + Environment.NewLine);
 
                     string debuggeeExecutable = args.Args[1];
                     var debuggeeArguments = args.Args.Skip(2);
                     string waitingUiExecutable = Assembly.GetExecutingAssembly().Location;
                     var waitingUiArguments = new List<string> { "--Wait", $"\"{Path.GetFileName(debuggeeExecutable)}\"" };
 
-                    File.AppendAllText(@"C:\Unencrypted\Workbench\Operating Table\pnsd.log", "debuggee proc: " + debuggeeExecutable + " " + string.Join(" ", debuggeeArguments) + Environment.NewLine);
-                    File.AppendAllText(@"C:\Unencrypted\Workbench\Operating Table\pnsd.log", "waiting proc: " + waitingUiExecutable + " " + string.Join(" ", waitingUiArguments) + Environment.NewLine);
+                    File.AppendAllText(@".\pnsd.log", "debuggee proc: " + debuggeeExecutable + " " + string.Join(" ", debuggeeArguments) + Environment.NewLine);
+                    File.AppendAllText(@".\pnsd.log", "waiting proc: " + waitingUiExecutable + " " + string.Join(" ", waitingUiArguments) + Environment.NewLine);
 
                     using (var debuggeeProcess = new Process(debuggeeExecutable, debuggeeArguments))
                     using (var waitingProcess = new Process(waitingUiExecutable, waitingUiArguments))
@@ -97,12 +97,14 @@ namespace PrenatalServiceDebugger
                 }
                 else if (args.Args.Length > 1 && args.Args[0] == "--Wait")
                 {
-                    var window = new WaitWindow
+                    using (var window = new WaitWindow
                     {
                         ApplicationName = args.Args.Length > 1 ? args.Args[1] : string.Empty,
-                        TimeWaitedInPercent = 50
-                    };
-                    window.Show();
+                        TimeWaitedInPercent = 50,
+                    })
+                    {
+                        window.Show();
+                    }
                 }
                 else
                 {
@@ -145,7 +147,7 @@ namespace PrenatalServiceDebugger
             }
             catch (Exception e)
             {
-                File.AppendAllText(@"C:\Unencrypted\Workbench\Operating Table\pnsd2.log", e.ToString() + Environment.NewLine);
+                File.AppendAllText(@".\pnsd2.log", e.ToString() + Environment.NewLine);
             }
         }
     }

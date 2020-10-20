@@ -9,6 +9,7 @@ namespace PrenatalServiceDebugger
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
     using System.ComponentModel;
+    using System.Globalization;
     using System.Linq;
     using System.Reflection;
     using System.ServiceProcess;
@@ -18,7 +19,7 @@ namespace PrenatalServiceDebugger
     using System.Windows.Media;
 
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for MainWindow.xaml.
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
@@ -30,12 +31,12 @@ namespace PrenatalServiceDebugger
         /// <summary>
         /// List of services that are excluded from being used for debugging.
         /// </summary>
-        private static List<string> excludedServices = new List<string> { "svchost.exe" };
+        private static List<string> excludedServices = new List<string> { "SVCHOST.EXE" };
 
         /// <summary>
         /// Custom service timeout in milliseconds.
         /// </summary>
-        private int customServiceTimeout = 0;
+        private int customServiceTimeout;
 
         /// <summary>
         /// Indicates whether a custom service timeout is used or not.
@@ -73,6 +74,11 @@ namespace PrenatalServiceDebugger
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
+        /// Gets the image to be shown in the info field in the dialog.
+        /// </summary>
+        public static ImageSource InfoImage { get => SystemUtils.GetSystemIcon(SystemUtils.SystemIcon.Warning, SystemUtils.SystemIconSize.Small); }
+
+        /// <summary>
         /// Gets a list of all services that are available for debugging.
         /// </summary>
         public ObservableCollection<ServiceModel> Services { get; } = new ObservableCollection<ServiceModel>();
@@ -90,12 +96,12 @@ namespace PrenatalServiceDebugger
             set
             {
                 this.customServiceTimeout = value;
-                this.RaisePropertyChanged("CustomTimeout");
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.CustomServiceTimeout)));
             }
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether a custom service timout should be used or not.
+        /// Gets or sets a value indicating whether a custom service timeout should be used or not.
         /// </summary>
         public bool UseCustomServiceTimeout
         {
@@ -107,7 +113,7 @@ namespace PrenatalServiceDebugger
             set
             {
                 this.useCustomServiceTimeout = value;
-                this.RaisePropertyChanged("UseCustomTimeout");
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.UseCustomServiceTimeout)));
             }
         }
 
@@ -122,20 +128,6 @@ namespace PrenatalServiceDebugger
             }
         }
 
-        /// <summary>
-        /// Gets the image to be shown in the info field in the dialog.
-        /// </summary>
-        public ImageSource InfoImage { get => SystemUtils.GetSystemIcon(SystemUtils.SystemIcon.Warning, SystemUtils.SystemIconSize.Small); }
-
-        /// <summary>
-        /// Raises <see cref="PropertyChanged"/> event.
-        /// </summary>
-        /// <param name="propertyName">The name of the property that changed.</param>
-        protected virtual void RaisePropertyChanged(string propertyName)
-        {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         private static IList<ServiceModel> GetServices()
         {
             var services = new List<ServiceModel>();
@@ -146,7 +138,7 @@ namespace PrenatalServiceDebugger
                 string fileName = executableFileNameRegEx.Match(imagePath).Value;
 
                 // Only add services with a file name and that are not excluded.
-                if (string.IsNullOrEmpty(fileName) || excludedServices.Contains(fileName.ToLower()))
+                if (string.IsNullOrEmpty(fileName) || excludedServices.Contains(fileName.ToUpperInvariant()))
                 {
                     continue;
                 }
@@ -156,7 +148,7 @@ namespace PrenatalServiceDebugger
                     ImagePath = imagePath,
                     FileName = fileName,
                     DisplayName = $"{serviceController.DisplayName} ({fileName})",
-                    IsDebuggerSet = SystemUtils.IsIfeoDebuggerSet(fileName, Assembly.GetExecutingAssembly().Location)
+                    IsDebuggerSet = SystemUtils.IsIfeoDebuggerSet(fileName, Assembly.GetExecutingAssembly().Location),
                 };
 
                 services.Add(service);
@@ -198,19 +190,15 @@ namespace PrenatalServiceDebugger
         /// <param name="e">The event arguments.</param>
         private void ServiceModelPropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-#pragma warning disable IDE0019 // Use pattern matching: Results in a false-positive for a StyleCop rule.
             var service = sender as ServiceModel;
-#pragma warning restore IDE0019 // Use pattern matching
-            if (service == null || e.PropertyName != "IsDebuggerSet")
+            if (service == null || e.PropertyName != nameof(ServiceModel.IsDebuggerSet))
             {
                 return;
             }
 
             if (service.IsDebuggerSet)
             {
-#pragma warning disable SA1012 // Opening braces must be spaced correctly; False-positive: String interpolation is not correctly recognized.
-                var debuggerCommand = $"\"{ Assembly.GetExecutingAssembly().Location}\" --Debug";
-#pragma warning restore SA1012 // Opening braces must be spaced correctly
+                var debuggerCommand = $"\"{Assembly.GetExecutingAssembly().Location}\" --Debug";
                 SystemUtils.SetIfeoDebugger(service.FileName, debuggerCommand);
             }
             else

@@ -198,9 +198,9 @@ namespace PrenatalServiceDebugger
                 {
                     luid.LowPart,
                     luid.HighPart,
-                    NativeMethods.SE_PRIVILEGE_ENABLED
+                    NativeMethods.SE_PRIVILEGE_ENABLED,
                 },
-                PrivilegeCount = 1
+                PrivilegeCount = 1,
             };
 
             var tokenHandle = IntPtr.Zero;

@@ -48,17 +48,8 @@ namespace PrenatalServiceDebugger
             set
             {
                 this.isDebuggerSet = value;
-                this.RaisePropertyChanged("IsDebuggerSet");
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ServiceModel.IsDebuggerSet)));
             }
-        }
-
-        /// <summary>
-        /// Raises <see cref="PropertyChanged"/> event.
-        /// </summary>
-        /// <param name="propertyName">The name of the property that changed.</param>
-        protected virtual void RaisePropertyChanged(string propertyName)
-        {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

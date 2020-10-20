@@ -8,7 +8,7 @@ namespace PrenatalServiceDebugger
     using System;
 
     /// <summary>
-    /// Extension methods for <see cref="string"/>
+    /// Extension methods for <see cref="string"/>.
     /// </summary>
     public static class StringExtensions
     {

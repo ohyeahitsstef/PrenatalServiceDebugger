@@ -11,6 +11,8 @@ namespace PrenatalServiceDebugger
 
 #pragma warning disable SA1600 // Elements must be documented
 #pragma warning disable SA1602 // Enumeration items must be documented
+#pragma warning disable CA1712 // Do not prefix enum values with type name
+#pragma warning disable CA1069 // Enums values should not be duplicated
     internal static class NativeMethods
     {
         internal const uint InvalidSessionId = 0xFFFFFFFF;
@@ -156,7 +158,7 @@ namespace PrenatalServiceDebugger
             SIID_MEDIABDR = 138,
             SIID_MEDIABDRE = 139,
             SIID_CLUSTEREDDRIVE = 140,
-            SIID_MAX_ICONS = 175
+            SIID_MAX_ICONS = 175,
         }
 
         [Flags]
@@ -169,7 +171,7 @@ namespace PrenatalServiceDebugger
             SHGSI_SELECTED = 0x000010000,
             SHGSI_LARGEICON = 0x000000000,
             SHGSI_SMALLICON = 0x000000001,
-            SHGSI_SHELLICONSIZE = 0x000000004
+            SHGSI_SHELLICONSIZE = 0x000000004,
         }
 
         [Flags]
@@ -218,21 +220,21 @@ namespace PrenatalServiceDebugger
             WTSListen,
             WTSReset,
             WTSDown,
-            WTSInit
+            WTSInit,
         }
 
         internal enum WTSClientProtocolType : ushort
         {
             Console,
             Legacy,
-            Rdp
+            Rdp,
         }
 
         internal enum WTS_TYPE_CLASS : uint
         {
             WTSTypeProcessInfoLevel0,
             WTSTypeProcessInfoLevel1,
-            WTSTypeSessionInfoLevel1
+            WTSTypeSessionInfoLevel1,
         }
 
         internal enum WTS_INFO_CLASS : uint
@@ -261,7 +263,7 @@ namespace PrenatalServiceDebugger
             WTSIncomingFrames,
             WTSOutgoingFrames,
             WTSClientInfo,
-            WTSSessionInfo
+            WTSSessionInfo,
         }
 
         [Flags]
@@ -302,13 +304,13 @@ namespace PrenatalServiceDebugger
             WINSTA_EXITWINDOWS = 0x00000040,
             WINSTA_ENUMERATE = 0x00000100,
             WINSTA_READSCREEN = 0x00000200,
-            WINSTA_ALL_ACCESS = 0x0000037f
+            WINSTA_ALL_ACCESS = 0x0000037f,
         }
 
         internal enum TOKEN_TYPE : uint
         {
             TokenPrimary = 1,
-            TokenImpersonation
+            TokenImpersonation,
         }
 
         internal enum TOKEN_INFORMATION_CLASS : uint
@@ -330,7 +332,7 @@ namespace PrenatalServiceDebugger
             TokenSandBoxInert,
             TokenAuditPolicy,
             TokenOrigin,
-            MaxTokenInfoClass
+            MaxTokenInfoClass,
         }
 
         internal enum SECURITY_IMPERSONATION_LEVEL : uint
@@ -338,7 +340,7 @@ namespace PrenatalServiceDebugger
             SecurityAnonymous,
             SecurityIdentification,
             SecurityImpersonation,
-            SecurityDelegation
+            SecurityDelegation,
         }
 
         [Flags]
@@ -380,7 +382,7 @@ namespace PrenatalServiceDebugger
             SHTDN_REASON_MINOR_UPGRADE = 0x00000003,
             SHTDN_REASON_MINOR_WMI = 0x00000015,
             SHTDN_REASON_FLAG_USER_DEFINED = 0x40000000,
-            SHTDN_REASON_FLAG_PLANNED = 0x80000000
+            SHTDN_REASON_FLAG_PLANNED = 0x80000000,
         }
 
         [DllImport("Shell32.dll", SetLastError = true)]

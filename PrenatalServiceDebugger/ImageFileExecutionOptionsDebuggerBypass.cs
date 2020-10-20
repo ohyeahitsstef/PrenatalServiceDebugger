@@ -13,9 +13,6 @@ namespace PrenatalServiceDebugger
     /// </summary>
     internal sealed class ImageFileExecutionOptionsDebuggerBypass : IDisposable
     {
-        private const string ImageFileExecutionOptionsKey = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options";
-        private const string ImageFileExecutionOptionsDebuggerValue = @"Debugger";
-
         private readonly string debugger;
         private readonly string executableName;
 

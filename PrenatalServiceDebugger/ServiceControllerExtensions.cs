@@ -5,11 +5,13 @@
 
 namespace PrenatalServiceDebugger
 {
+    using System;
+    using System.CodeDom;
     using System.ServiceProcess;
     using Microsoft.Win32;
 
     /// <summary>
-    /// Extension methods for <see cref="ServiceController"/>
+    /// Extension methods for <see cref="ServiceController"/>.
     /// </summary>
     public static class ServiceControllerExtensions
     {
@@ -20,7 +22,12 @@ namespace PrenatalServiceDebugger
         /// <returns>Returns the image path or an empty string.</returns>
         public static string GetImagePath(this ServiceController serviceController)
         {
-            string registryPath = @"SYSTEM\CurrentControlSet\Services\" + serviceController.ServiceName;
+            if (serviceController == null)
+            {
+                throw new ArgumentNullException(nameof(serviceController));
+            }
+
+            string registryPath = $@"SYSTEM\CurrentControlSet\Services\{serviceController.ServiceName}";
 
             using (RegistryKey key = Registry.LocalMachine.OpenSubKey(registryPath))
             {

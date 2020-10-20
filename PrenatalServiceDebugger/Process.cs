@@ -16,7 +16,6 @@ namespace PrenatalServiceDebugger
     using System.Threading;
     using System.Threading.Tasks;
 
-#pragma warning disable IDE0018 // Inline variable declaration: Rather not for all those p/invoke out parameters.
     /// <summary>
     /// Class representing a process.
     /// </summary>
@@ -47,8 +46,6 @@ namespace PrenatalServiceDebugger
         public IList<string> Arguments { get; }
 
         /// <inheritdoc/>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "threadHandle", Justification = "False-positive: Null propagation operator is not recognized.")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "processHandle", Justification = "False-positive: Null propagation operator is not recognized.")]
         public void Dispose()
         {
             this.processHandle?.Dispose();
@@ -108,7 +105,7 @@ namespace PrenatalServiceDebugger
                 Environment.ExpandEnvironmentVariables(this.ExecutablePath),
                 string.Join(" ", this.Arguments))
             {
-                Verb = "runas"
+                Verb = "runas",
             };
 
             try
@@ -405,8 +402,8 @@ namespace PrenatalServiceDebugger
                         break;
                     }
 
-                    // Retry after one second
-                    Delay(delayTime).Wait();
+                    // Retry after some delay
+                    Task.Delay(delayTime).Wait();
                     passedTime += delayTime;
                 }
 
@@ -431,18 +428,6 @@ namespace PrenatalServiceDebugger
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not terminate process");
             }
-        }
-
-        /// <summary>
-        /// Creates a delay task.
-        /// </summary>
-        /// <param name="milliseconds">The number of milliseconds to delay.</param>
-        /// <returns>Returns the created delay task.</returns>
-        private static Task Delay(int milliseconds)
-        {
-            var tcs = new TaskCompletionSource<object>();
-            new Timer(_ => tcs.SetResult(null)).Change(milliseconds, -1);
-            return tcs.Task;
         }
 
         /// <summary>
@@ -501,7 +486,7 @@ namespace PrenatalServiceDebugger
         }
 
         /// <summary>
-        /// Gets the complete command line of the process (Path and arguments)
+        /// Gets the complete command line of the process (Path and arguments).
         /// </summary>
         /// <returns>Returns the complete command line.</returns>
         private string GetCommandLine()
@@ -521,5 +506,4 @@ namespace PrenatalServiceDebugger
             return commandLine;
         }
     }
-#pragma warning restore IDE0018 // Inline variable declaration
 }

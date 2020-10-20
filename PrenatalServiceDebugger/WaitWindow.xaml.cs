@@ -15,7 +15,7 @@ namespace PrenatalServiceDebugger
     using System.Windows.Threading;
 
     /// <summary>
-    /// Interaction logic for WaitWindow.xaml
+    /// Interaction logic for WaitWindow.xaml.
     /// </summary>
     public partial class WaitWindow : Window, INotifyPropertyChanged, IDisposable
     {
@@ -37,12 +37,12 @@ namespace PrenatalServiceDebugger
         /// <summary>
         /// The elapsed waiting time.
         /// </summary>
-        private int elapsedTime = 0;
+        private int elapsedTime;
 
         /// <summary>
         /// The percentage of the elapsed time in regards to the overall waiting time.
         /// </summary>
-        private int timeWaitedInPercent = 0;
+        private int timeWaitedInPercent;
 
         /// <summary>
         /// The name of the application shown in the UI.
@@ -52,7 +52,7 @@ namespace PrenatalServiceDebugger
         /// <summary>
         /// Indicates whether or not the instance is already disposed.
         /// </summary>
-        private bool alreadyDisposed = false;
+        private bool alreadyDisposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WaitWindow"/> class.
@@ -69,6 +69,11 @@ namespace PrenatalServiceDebugger
         public event PropertyChangedEventHandler PropertyChanged;
 
         /// <summary>
+        /// Gets the image to be shown in the dialog.
+        /// </summary>
+        public static ImageSource DialogImage { get => SystemUtils.GetSystemIcon(SystemUtils.SystemIcon.Info, SystemUtils.SystemIconSize.Large); }
+
+        /// <summary>
         /// Gets or sets the name of the application shown in the UI.
         /// </summary>
         public string ApplicationName
@@ -81,7 +86,7 @@ namespace PrenatalServiceDebugger
             set
             {
                 this.applicationName = value;
-                this.RaisePropertyChanged("ApplicationName");
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.ApplicationName)));
             }
         }
 
@@ -98,26 +103,21 @@ namespace PrenatalServiceDebugger
             set
             {
                 this.timeWaitedInPercent = value > 100 ? 100 : value;
-                this.RaisePropertyChanged("TimeWaitedInPercent");
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.TimeWaitedInPercent)));
             }
         }
-
-        /// <summary>
-        /// Gets the image to be shown in the dialog.
-        /// </summary>
-        public ImageSource DialogImage { get => SystemUtils.GetSystemIcon(SystemUtils.SystemIcon.Info, SystemUtils.SystemIconSize.Large); }
 
         /// <inheritdoc/>
         public void Dispose()
         {
             this.Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
         /// Disposes the resources that need to be freed.
         /// </summary>
         /// <param name="dispose">Indicates whether managed resources should also be disposed.</param>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2213:DisposableFieldsShouldBeDisposed", MessageId = "windowTimeoutTimer", Justification = "False-positive: Null propagation operator is not recognized.")]
         protected virtual void Dispose(bool dispose)
         {
             if (this.alreadyDisposed)
@@ -131,15 +131,6 @@ namespace PrenatalServiceDebugger
             }
 
             this.alreadyDisposed = true;
-        }
-
-        /// <summary>
-        /// Raises <see cref="PropertyChanged"/> event.
-        /// </summary>
-        /// <param name="propertyName">The name of the property that changed.</param>
-        protected virtual void RaisePropertyChanged(string propertyName)
-        {
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         /// <summary>
