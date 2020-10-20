@@ -196,7 +196,7 @@ namespace PrenatalServiceDebugger
                 profileDir = profileDirBuilder.ToString();
             }
 
-            NativeMethods.STARTUPINFO startupInfo = default(NativeMethods.STARTUPINFO);
+            var startupInfo = default(NativeMethods.STARTUPINFO);
             startupInfo.cb = Marshal.SizeOf(startupInfo);
             NativeMethods.PROCESS_INFORMATION processInfo;
 
@@ -307,8 +307,8 @@ namespace PrenatalServiceDebugger
                 throw new Win32Exception();
             }
 
-            NativeMethods.PROCESS_INFORMATION processInfo = default(NativeMethods.PROCESS_INFORMATION);
-            NativeMethods.STARTUPINFO startupInfo = default(NativeMethods.STARTUPINFO);
+            var processInfo = default(NativeMethods.PROCESS_INFORMATION);
+            var startupInfo = default(NativeMethods.STARTUPINFO);
             startupInfo.cb = Marshal.SizeOf(startupInfo);
             startupInfo.lpDesktop = @"Winsta0\Winlogon";
 
