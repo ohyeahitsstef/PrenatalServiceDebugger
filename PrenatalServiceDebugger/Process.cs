@@ -291,6 +291,7 @@ namespace PrenatalServiceDebugger
             NativeMethods.CloseHandle(currentToken);
             if (!tokenDuplicated)
             {
+                NativeMethods.CloseHandle(newToken);
                 throw new Win32Exception();
             }
 
