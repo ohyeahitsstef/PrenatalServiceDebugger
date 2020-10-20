@@ -250,7 +250,7 @@ namespace PrenatalServiceDebugger
             IntPtr currentToken = IntPtr.Zero;
             bool processTokenOpened = NativeMethods.OpenProcessToken(
                 process.Handle,
-                NativeMethods.TOKEN_DUPLICATE,
+                NativeMethods.TOKEN_DUPLICATE | NativeMethods.TOKEN_QUERY,
                 out currentToken);
             if (!processTokenOpened)
             {
