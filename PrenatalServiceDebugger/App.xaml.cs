@@ -68,17 +68,29 @@ namespace PrenatalServiceDebugger
                         }
                         catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
                         {
-                            // TODO: handling if debuggee could not be started.
+                            // Unable to start the debugee
+                            Current.Shutdown();
+                            return;
                         }
 
                         try
                         {
-                            // TODO: Start on Winlogon screen when no user is logged on.
-                            waitingProcess.StartOnUserDesktop();
+                            // Start the waiting UI on the user desktop or on Winlogon screen when no user is logged on.
+                            if (SystemUtils.IsLoggedOnUserAvailable())
+                            {
+                                File.AppendAllText(@".\pnsd.log", "User available" + Environment.NewLine);
+                                waitingProcess.StartOnUserDesktop();
+                            }
+                            else
+                            {
+                                File.AppendAllText(@".\pnsd.log", "Logon screen" + Environment.NewLine);
+                                waitingProcess.StartOnLogonScreen();
+                            }
                         }
                         catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
                         {
                             // Too bad, but nothing we can do about it, just omit the waiting dialog.
+                            File.AppendAllText(@".\pnsd.log", "Unable to start wait window." + Environment.NewLine + e.StackTrace + Environment.NewLine + e.Message + Environment.NewLine);
                         }
 
                         bool isDebuggerAttached = debuggeeProcess.WaitForDebugger(SystemUtils.GetServiceTimeout() - 1000);

@@ -320,5 +320,17 @@ namespace PrenatalServiceDebugger
 
             return false;
         }
+
+        /// <summary>
+        /// Gets whether a user is currently logged on to the system.
+        /// </summary>
+        /// <returns>Returns true if there is a logged on user.</returns>
+        public static bool IsLoggedOnUserAvailable()
+        {
+            uint activeSessionId = Process.GetActiveConsoleSessionId();
+
+            // If the session id is valid and not the system session.
+            return activeSessionId != NativeMethods.InvalidSessionId && activeSessionId != 0;
+        }
     }
 }
