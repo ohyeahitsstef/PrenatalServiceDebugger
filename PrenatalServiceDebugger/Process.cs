@@ -434,7 +434,7 @@ namespace PrenatalServiceDebugger
         /// Gets the session id of the currently active console session (local and RDP).
         /// </summary>
         /// <returns>Returns the session id of the currently active console session.</returns>
-        private static uint GetActiveConsoleSessionId()
+        internal static uint GetActiveConsoleSessionId()
         {
             uint level = 1;
             IntPtr sessions = IntPtr.Zero;
