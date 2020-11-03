@@ -387,7 +387,8 @@ namespace PrenatalServiceDebugger
 
         [DllImport("Shell32.dll", SetLastError = true)]
         internal static extern int SHGetStockIconInfo(
-            SHSTOCKICONID siid, SHGSI uFlags,
+            SHSTOCKICONID siid,
+            SHGSI uFlags,
             ref SHSTOCKICONINFO psii);
 
         [DllImport("user32.dll", SetLastError = true)]
@@ -625,11 +626,21 @@ namespace PrenatalServiceDebugger
             internal uint ExecEnvId;
             internal WTS_CONNECTSTATE_CLASS State;
             internal uint SessionId;
-            [MarshalAs(UnmanagedType.LPWStr)] internal string pSessionName;
-            [MarshalAs(UnmanagedType.LPWStr)] internal string pHostName;
-            [MarshalAs(UnmanagedType.LPWStr)] internal string pUserName;
-            [MarshalAs(UnmanagedType.LPWStr)] internal string pDomainName;
-            [MarshalAs(UnmanagedType.LPWStr)] internal string pFarmName;
+
+            [MarshalAs(UnmanagedType.LPWStr)]
+            internal string pSessionName;
+
+            [MarshalAs(UnmanagedType.LPWStr)]
+            internal string pHostName;
+
+            [MarshalAs(UnmanagedType.LPWStr)]
+            internal string pUserName;
+
+            [MarshalAs(UnmanagedType.LPWStr)]
+            internal string pDomainName;
+
+            [MarshalAs(UnmanagedType.LPWStr)]
+            internal string pFarmName;
         }
 
         [StructLayout(LayoutKind.Sequential)]

@@ -424,8 +424,7 @@ namespace PrenatalServiceDebugger
                 return;
             }
 
-            //TODO: Check process handle if it is still active GetExitCodeProcess() STILL_ACTIVE
-
+            // TODO: Check process handle if it is still active GetExitCodeProcess() STILL_ACTIVE
             bool processTerminated = NativeMethods.TerminateProcess(this.processHandle.DangerousGetHandle(), 1);
             if (!processTerminated)
             {

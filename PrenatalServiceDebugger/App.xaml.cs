@@ -106,8 +106,7 @@ namespace PrenatalServiceDebugger
                             File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Unable to start wait window." + Environment.NewLine + e.StackTrace + Environment.NewLine + e.Message + Environment.NewLine);
                         }
 
-
-                        //TODO: Also wait for waiting process exit (user closed the waiting window on purpose -> just resume service)
+                        // TODO: Also wait for waiting process exit (user closed the waiting window on purpose -> just resume service)
                         bool isDebuggerAttached = debuggeeProcess.WaitForDebugger(SystemUtils.GetServiceTimeout() - 2000);
 
                         if (isDebuggerAttached)
