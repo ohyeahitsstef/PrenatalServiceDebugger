@@ -16,6 +16,7 @@ namespace PrenatalServiceDebugger
     internal static class NativeMethods
     {
         internal const uint InvalidSessionId = 0xFFFFFFFF;
+        internal const int STILL_ACTIVE = 0x00000103;
         internal const int READ_CONTROL = 0x00020000;
         internal const int STANDARD_RIGHTS_REQUIRED = 0x000F0000;
         internal const int STANDARD_RIGHTS_READ = READ_CONTROL;
@@ -406,6 +407,12 @@ namespace PrenatalServiceDebugger
         internal static extern bool TerminateProcess(
             IntPtr hProcess,
             uint uExitCode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool GetExitCodeProcess(
+            IntPtr hProcess,
+            out uint lpExitCode);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
