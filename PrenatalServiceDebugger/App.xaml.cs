@@ -28,12 +28,12 @@ namespace PrenatalServiceDebugger
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times", Justification = "False-positive: ImageFileExecutionOptionsDebuggerBypass may not be disposed multiple times.")]
         private void StartupHandler(object sender, StartupEventArgs args)
         {
-            File.AppendAllText(@".\pnsd.log", string.Join(", ", args.Args) + Environment.NewLine);
+            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", string.Join(", ", args.Args) + Environment.NewLine);
             try
             {
                 if (args.Args.Length > 1 && args.Args[0] == "--Debug")
                 {
-                    File.AppendAllText(@".\pnsd.log", "Debugging" + Environment.NewLine);
+                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Debugging" + Environment.NewLine);
                     if (!SystemUtils.IsAdministrator() && !SystemUtils.IsLocalSystem())
                     {
                         MessageBox.Show(
@@ -45,15 +45,15 @@ namespace PrenatalServiceDebugger
                         return;
                     }
 
-                    File.AppendAllText(@".\pnsd.log", "As System service" + Environment.NewLine);
+                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "As System service" + Environment.NewLine);
 
                     string debuggeeExecutable = args.Args[1];
                     var debuggeeArguments = args.Args.Skip(2);
                     string waitingUiExecutable = Assembly.GetExecutingAssembly().Location;
                     var waitingUiArguments = new List<string> { "--Wait", $"\"{Path.GetFileName(debuggeeExecutable)}\"" };
 
-                    File.AppendAllText(@".\pnsd.log", "debuggee proc: " + debuggeeExecutable + " " + string.Join(" ", debuggeeArguments) + Environment.NewLine);
-                    File.AppendAllText(@".\pnsd.log", "waiting proc: " + waitingUiExecutable + " " + string.Join(" ", waitingUiArguments) + Environment.NewLine);
+                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "debuggee proc: " + debuggeeExecutable + " " + string.Join(" ", debuggeeArguments) + Environment.NewLine);
+                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "waiting proc: " + waitingUiExecutable + " " + string.Join(" ", waitingUiArguments) + Environment.NewLine);
 
                     using (var debuggeeProcess = new Process(debuggeeExecutable, debuggeeArguments))
                     using (var waitingProcess = new Process(waitingUiExecutable, waitingUiArguments))
@@ -78,29 +78,46 @@ namespace PrenatalServiceDebugger
                             // Start the waiting UI on the user desktop or on Winlogon screen when no user is logged on.
                             if (SystemUtils.IsLoggedOnUserAvailable())
                             {
-                                File.AppendAllText(@".\pnsd.log", "User available" + Environment.NewLine);
+                                File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "User available" + Environment.NewLine);
                                 waitingProcess.StartOnUserDesktop();
                             }
                             else
                             {
-                                File.AppendAllText(@".\pnsd.log", "Logon screen" + Environment.NewLine);
+                                // Wait for logon screen to become active
+                                for (int i = 0; i < 10; ++i)
+                                {
+                                    uint activeSessionId = Process.GetActiveConsoleSessionId();
+
+                                    if (activeSessionId != NativeMethods.InvalidSessionId)
+                                    {
+                                        break;
+                                    }
+
+                                    System.Threading.Thread.Sleep(1000);
+                                }
+
+                                File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Logon screen available" + Environment.NewLine);
                                 waitingProcess.StartOnLogonScreen();
                             }
                         }
                         catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
                         {
                             // Too bad, but nothing we can do about it, just omit the waiting dialog.
-                            File.AppendAllText(@".\pnsd.log", "Unable to start wait window." + Environment.NewLine + e.StackTrace + Environment.NewLine + e.Message + Environment.NewLine);
+                            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Unable to start wait window." + Environment.NewLine + e.StackTrace + Environment.NewLine + e.Message + Environment.NewLine);
                         }
 
-                        bool isDebuggerAttached = debuggeeProcess.WaitForDebugger(SystemUtils.GetServiceTimeout() - 1000);
+
+                        //TODO: Also wait for waiting process exit (user closed the waiting window on purpose -> just resume service)
+                        bool isDebuggerAttached = debuggeeProcess.WaitForDebugger(SystemUtils.GetServiceTimeout() - 2000);
 
                         if (isDebuggerAttached)
                         {
+                            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Resume service." + Environment.NewLine);
                             debuggeeProcess.Resume();
                         }
                         else
                         {
+                            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Terminate service." + Environment.NewLine);
                             debuggeeProcess.Terminate();
                         }
 
@@ -117,12 +134,14 @@ namespace PrenatalServiceDebugger
                         TimeWaitedInPercent = 50,
                     };
                     this.window.Show();
+                    this.window.Activate();
                 }
                 else
                 {
                     if (SystemUtils.IsLocalSystem())
                     {
                         // If we accidentally got started as a service with invalid command line arguments, just quit.
+                        File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "No args as local system?! Quit!." + Environment.NewLine);
                         Current.Shutdown();
                         return;
                     }
@@ -159,7 +178,7 @@ namespace PrenatalServiceDebugger
             }
             catch (Exception e)
             {
-                File.AppendAllText(@".\pnsd2.log", e.ToString() + Environment.NewLine);
+                File.AppendAllText(@"C:\Workbench\operatingtable\pnsd_err.log", e.ToString() + Environment.NewLine);
             }
         }
     }

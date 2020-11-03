@@ -386,19 +386,25 @@ namespace PrenatalServiceDebugger
         }
 
         [DllImport("Shell32.dll", SetLastError = true)]
-        internal static extern int SHGetStockIconInfo(SHSTOCKICONID siid, SHGSI uFlags, ref SHSTOCKICONINFO psii);
+        internal static extern int SHGetStockIconInfo(
+            SHSTOCKICONID siid, SHGSI uFlags,
+            ref SHSTOCKICONINFO psii);
 
         [DllImport("user32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool DestroyIcon(IntPtr hIcon);
+        internal static extern bool DestroyIcon(
+            IntPtr hIcon);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool CloseHandle(IntPtr hObject);
+        internal static extern bool CloseHandle(
+            IntPtr hObject);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool TerminateProcess(IntPtr hProcess, uint uExitCode);
+        internal static extern bool TerminateProcess(
+            IntPtr hProcess,
+            uint uExitCode);
 
         [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -413,6 +419,12 @@ namespace PrenatalServiceDebugger
             string lpCurrentDirectory,
             ref STARTUPINFO lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern IntPtr OpenProcess(
+            ACCESS_MASK dwDesiredAccess,
+            [MarshalAs(UnmanagedType.Bool)] bool bInheritHandle,
+            uint dwProcessId);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -430,14 +442,18 @@ namespace PrenatalServiceDebugger
             out PROCESS_INFORMATION lpProcessInformation);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern int ResumeThread(IntPtr hThread);
+        internal static extern int ResumeThread(
+            IntPtr hThread);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern int SuspendThread(IntPtr hThread);
+        internal static extern int SuspendThread(
+            IntPtr hThread);
 
         [DllImport("Kernel32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool CheckRemoteDebuggerPresent(IntPtr hProcess, [MarshalAs(UnmanagedType.Bool)]ref bool isDebuggerPresent);
+        internal static extern bool CheckRemoteDebuggerPresent(
+            IntPtr hProcess,
+            [MarshalAs(UnmanagedType.Bool)]ref bool isDebuggerPresent);
 
         [DllImport("wtsapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -448,27 +464,45 @@ namespace PrenatalServiceDebugger
             ref IntPtr ppSessionInfo,
             ref uint pCount);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        internal static extern uint WTSGetActiveConsoleSessionId();
+
         [DllImport("Wtsapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool WTSQuerySessionInformation(IntPtr hServer, uint sessionId, WTS_INFO_CLASS wtsInfoClass, out IntPtr ppBuffer, out uint pBytesReturned);
+        internal static extern bool WTSQuerySessionInformation(
+            IntPtr hServer,
+            uint sessionId,
+            WTS_INFO_CLASS wtsInfoClass,
+            out IntPtr ppBuffer,
+            out uint pBytesReturned);
 
         [DllImport("wtsapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool WTSQueryUserToken(uint sessionId, out IntPtr phToken);
+        internal static extern bool WTSQueryUserToken(
+            uint sessionId,
+            out IntPtr phToken);
 
         [DllImport("wtsapi32.dll")]
-        internal static extern void WTSFreeMemory(IntPtr pMemory);
+        internal static extern void WTSFreeMemory(
+            IntPtr pMemory);
 
         [DllImport("wtsapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        internal static extern void WTSFreeMemoryExW(WTS_TYPE_CLASS wtsTypeClass, IntPtr memory, uint numberOfEntries);
+        internal static extern void WTSFreeMemoryExW(
+            WTS_TYPE_CLASS wtsTypeClass,
+            IntPtr memory,
+            uint numberOfEntries);
 
         [DllImport("userenv.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool LoadUserProfileW(IntPtr hToken, ref PROFILEINFO lpProfileInfo);
+        internal static extern bool LoadUserProfileW(
+            IntPtr hToken,
+            ref PROFILEINFO lpProfileInfo);
 
         [DllImport("userenv.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool UnloadUserProfile(IntPtr hToken, IntPtr hProfile);
+        internal static extern bool UnloadUserProfile(
+            IntPtr hToken,
+            IntPtr hProfile);
 
         [DllImport("userenv.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -479,11 +513,15 @@ namespace PrenatalServiceDebugger
 
         [DllImport("userenv.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool GetUserProfileDirectoryW(IntPtr hToken, StringBuilder lpProfileDir, ref uint lpcchSize);
+        internal static extern bool GetUserProfileDirectoryW(
+            IntPtr hToken,
+            StringBuilder lpProfileDir,
+            ref uint lpcchSize);
 
         [DllImport("userenv.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool DestroyEnvironmentBlock(IntPtr lpEnvironment);
+        internal static extern bool DestroyEnvironmentBlock(
+            IntPtr lpEnvironment);
 
         [DllImport("advapi32.dll", SetLastError = true)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -496,28 +534,11 @@ namespace PrenatalServiceDebugger
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool DuplicateTokenEx(
            IntPtr hExistingToken,
-           uint dwDesiredAccess,
-           IntPtr lpTokenAttributes,
+           ACCESS_MASK dwDesiredAccess,
+           ref SECURITY_ATTRIBUTES lpTokenAttributes,
            SECURITY_IMPERSONATION_LEVEL ImpersonationLevel,
            TOKEN_TYPE TokenType,
            out IntPtr phNewToken);
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool SetTokenInformation(
-          IntPtr TokenHandle,
-          TOKEN_INFORMATION_CLASS TokenInformationClass,
-          ref uint TokenInformation,
-          uint TokenInformationLength);
-
-        [DllImport("advapi32.dll", SetLastError = true)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        internal static extern bool GetTokenInformation(
-            IntPtr TokenHandle,
-            TOKEN_INFORMATION_CLASS TokenInformationClass,
-            IntPtr TokenInformation,
-            uint TokenInformationLength,
-            out uint ReturnLength);
 
         [DllImport("advapi32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -579,11 +600,8 @@ namespace PrenatalServiceDebugger
         internal struct STARTUPINFO
         {
             internal int cb;
-            [MarshalAs(UnmanagedType.LPStr)]
             internal string lpReserved;
-            [MarshalAs(UnmanagedType.LPStr)]
             internal string lpDesktop;
-            [MarshalAs(UnmanagedType.LPStr)]
             internal string lpTitle;
             internal int dwX;
             internal int dwY;
@@ -607,21 +625,11 @@ namespace PrenatalServiceDebugger
             internal uint ExecEnvId;
             internal WTS_CONNECTSTATE_CLASS State;
             internal uint SessionId;
-
-            [MarshalAs(UnmanagedType.LPStr)]
-            internal string pSessionName;
-
-            [MarshalAs(UnmanagedType.LPStr)]
-            internal string pHostName;
-
-            [MarshalAs(UnmanagedType.LPStr)]
-            internal string pUserName;
-
-            [MarshalAs(UnmanagedType.LPStr)]
-            internal string pDomainName;
-
-            [MarshalAs(UnmanagedType.LPStr)]
-            internal string pFarmName;
+            [MarshalAs(UnmanagedType.LPWStr)] internal string pSessionName;
+            [MarshalAs(UnmanagedType.LPWStr)] internal string pHostName;
+            [MarshalAs(UnmanagedType.LPWStr)] internal string pUserName;
+            [MarshalAs(UnmanagedType.LPWStr)] internal string pDomainName;
+            [MarshalAs(UnmanagedType.LPWStr)] internal string pFarmName;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -629,22 +637,11 @@ namespace PrenatalServiceDebugger
         {
             internal int dwSize;
             internal int dwFlags;
-
-            [MarshalAs(UnmanagedType.LPTStr)]
             internal string lpUserName;
-
-            [MarshalAs(UnmanagedType.LPTStr)]
             internal string lpProfilePath;
-
-            [MarshalAs(UnmanagedType.LPTStr)]
             internal string lpDefaultPath;
-
-            [MarshalAs(UnmanagedType.LPTStr)]
             internal string lpServerName;
-
-            [MarshalAs(UnmanagedType.LPTStr)]
             internal string lpPolicyPath;
-
             internal IntPtr hProfile;
         }
 

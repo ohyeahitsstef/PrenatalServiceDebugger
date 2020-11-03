@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PrenatalServiceDebugger"
         mc:Ignorable="d"
-        Title="Prenatal Service Debugger" SizeToContent="WidthAndHeight" MinWidth="398" ResizeMode="NoResize" Topmost="True"
+        Title="Prenatal Service Debugger" SizeToContent="WidthAndHeight" MinWidth="450" ResizeMode="NoResize" Topmost="True"
         DataContext="{Binding RelativeSource={RelativeSource Self}}">
     <DockPanel>
         <Image Source="{Binding DialogImage}" Margin="10,10,0,0" Stretch="None" VerticalAlignment="Top"/>

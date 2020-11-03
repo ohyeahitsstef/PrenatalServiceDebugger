@@ -244,76 +244,76 @@ namespace PrenatalServiceDebugger
                 throw new InvalidOperationException("TODO");
             }
 
-            var process = System.Diagnostics.Process.GetCurrentProcess();
+            uint sessionId = GetActiveConsoleSessionId();
 
-            // Get the token of the current process (should be LocalSystem)
+            if (sessionId == NativeMethods.InvalidSessionId)
+            {
+                throw new Win32Exception($"No active console session found.");
+            }
+
+            // Obtain the process ID of the winlogon process that is running within the currently active session.
+            uint winlogonPid = 0;
+            System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
+            foreach (var p in processes)
+            {
+                if ((uint)p.SessionId == sessionId)
+                {
+                    winlogonPid = (uint)p.Id;
+                }
+            }
+
+            if (winlogonPid == 0)
+            {
+                throw new Win32Exception($"Winlogon process not found.");
+            }
+
+            // Obtain a handle to the winlogon process.
+            var winlogonHandle = NativeMethods.OpenProcess(NativeMethods.ACCESS_MASK.MAXIMUM_ALLOWED, false, winlogonPid);
+
+            // Get the token of the winlogon process.
             IntPtr currentToken = IntPtr.Zero;
             bool processTokenOpened = NativeMethods.OpenProcessToken(
-                process.Handle,
-                NativeMethods.TOKEN_DUPLICATE | NativeMethods.TOKEN_QUERY,
+                winlogonHandle,
+                NativeMethods.TOKEN_DUPLICATE,
                 out currentToken);
+
+            NativeMethods.CloseHandle(winlogonHandle);
             if (!processTokenOpened)
             {
                 throw new Win32Exception();
             }
 
-            // Get the session id of the token
-            IntPtr tokenInformation = IntPtr.Zero;
-            uint tokenInformationSize = 0;
-            bool tokenInfoRetrieved = NativeMethods.GetTokenInformation(currentToken, NativeMethods.TOKEN_INFORMATION_CLASS.TokenSessionId, tokenInformation, tokenInformationSize, out tokenInformationSize);
-            if (!tokenInfoRetrieved)
-            {
-                NativeMethods.CloseHandle(currentToken);
-                throw new Win32Exception();
-            }
-
-            tokenInformation = Marshal.AllocHGlobal((int)tokenInformationSize);
-            tokenInfoRetrieved = NativeMethods.GetTokenInformation(currentToken, NativeMethods.TOKEN_INFORMATION_CLASS.TokenSessionId, tokenInformation, tokenInformationSize, out tokenInformationSize);
-            if (!tokenInfoRetrieved)
-            {
-                NativeMethods.CloseHandle(currentToken);
-                Marshal.FreeHGlobal(tokenInformation);
-                throw new Win32Exception();
-            }
-
-            uint sessionId = (uint)Marshal.ReadInt32(tokenInformation);
-            Marshal.FreeHGlobal(tokenInformation);
-
             // Duplicate token
-            IntPtr newToken = IntPtr.Zero;
+            var securityAttributes = default(NativeMethods.SECURITY_ATTRIBUTES);
+            securityAttributes.nLength = Marshal.SizeOf(securityAttributes);
+
+            var newToken = IntPtr.Zero;
             bool tokenDuplicated = NativeMethods.DuplicateTokenEx(
                 currentToken,
-                (uint)NativeMethods.ACCESS_MASK.GENERIC_ALL,
-                IntPtr.Zero,
+                NativeMethods.ACCESS_MASK.MAXIMUM_ALLOWED,
+                ref securityAttributes,
                 NativeMethods.SECURITY_IMPERSONATION_LEVEL.SecurityImpersonation,
-                NativeMethods.TOKEN_TYPE.TokenImpersonation,
+                NativeMethods.TOKEN_TYPE.TokenPrimary,
                 out newToken);
+
             NativeMethods.CloseHandle(currentToken);
             if (!tokenDuplicated)
             {
-                NativeMethods.CloseHandle(newToken);
                 throw new Win32Exception();
             }
 
-            // Set the correct session id for the duplicated token
-            bool tokenInfoSet = NativeMethods.SetTokenInformation(
-                newToken,
-                NativeMethods.TOKEN_INFORMATION_CLASS.TokenSessionId,
-                ref sessionId,
-                sizeof(uint));
-            if (!tokenInfoSet)
-            {
-                NativeMethods.CloseHandle(newToken);
-                throw new Win32Exception();
-            }
-
+            // Finally create process
             var processInfo = default(NativeMethods.PROCESS_INFORMATION);
-            var startupInfo = default(NativeMethods.STARTUPINFO);
-            startupInfo.cb = Marshal.SizeOf(startupInfo);
-            startupInfo.lpDesktop = @"Winsta0\Winlogon";
 
             var processSecurityAttributes = default(NativeMethods.SECURITY_ATTRIBUTES);
+            processSecurityAttributes.nLength = Marshal.SizeOf(processSecurityAttributes);
+
             var threadSecurityAttributes = default(NativeMethods.SECURITY_ATTRIBUTES);
+            threadSecurityAttributes.nLength = Marshal.SizeOf(threadSecurityAttributes);
+
+            var startupInfo = default(NativeMethods.STARTUPINFO);
+            startupInfo.cb = Marshal.SizeOf(startupInfo);
+            startupInfo.lpDesktop = @"winsta0\Winlogon";
 
             bool processCreated = NativeMethods.CreateProcessAsUserW(
                 newToken,
@@ -321,8 +321,8 @@ namespace PrenatalServiceDebugger
                 this.GetCommandLine(),
                 ref processSecurityAttributes,
                 ref threadSecurityAttributes,
-                true,
-                NativeMethods.CreateProcessFlags.CREATE_NEW_CONSOLE | NativeMethods.CreateProcessFlags.INHERIT_CALLER_PRIORITY,
+                false,
+                NativeMethods.CreateProcessFlags.CREATE_NEW_CONSOLE | NativeMethods.CreateProcessFlags.NORMAL_PRIORITY_CLASS,
                 IntPtr.Zero,
                 null,
                 ref startupInfo,
@@ -423,6 +423,8 @@ namespace PrenatalServiceDebugger
             {
                 return;
             }
+
+            //TODO: Check process handle if it is still active GetExitCodeProcess() STILL_ACTIVE
 
             bool processTerminated = NativeMethods.TerminateProcess(this.processHandle.DangerousGetHandle(), 1);
             if (!processTerminated)
