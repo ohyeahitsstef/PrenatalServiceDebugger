@@ -374,24 +374,59 @@ namespace PrenatalServiceDebugger
         }
 
         /// <summary>
-        /// Waits until a debugger is attached to the process or a timeout occurs.
+        /// Waits until the process has exited.
         /// </summary>
-        /// <param name="timeout">The number of milliseconds to be waited for a debugger.</param>
-        /// <returns>Returns true if a debugger has attached, otherwise false is returned.</returns>
-        public bool WaitForDebugger(int timeout)
+        /// <returns>Returns a Task that waits for the process to be terminated and results in true if the process has exited or false if an error occurred.</returns>
+        public Task<bool> HasExitedAsync()
         {
             if (this.processHandle == null)
             {
-                return false;
+                throw new InvalidOperationException("TODO");
             }
 
-            var task = Task<bool>.Factory.StartNew(() =>
+            return Task<bool>.Factory.StartNew(() =>
+            {
+                const int delayTime = 100;
+                var failuresCount = 0;
+                var hasExited = false;
+                while (failuresCount <= 3)
+                {
+                    uint exitCode;
+                    if (!NativeMethods.GetExitCodeProcess(this.processHandle.DangerousGetHandle(), out exitCode))
+                    {
+                        failuresCount++;
+                    }
+
+                    if (exitCode != NativeMethods.STILL_ACTIVE)
+                    {
+                        break;
+                    }
+
+                    // Retry after some delay
+                    Task.Delay(delayTime).Wait();
+                }
+
+                return hasExited;
+            });
+        }
+
+        /// <summary>
+        /// Waits until a debugger is attached to the process.
+        /// </summary>
+        /// <returns>Returns a task that waits for a debugger to be attached and results in true if a debugger has attached or false if an error occurred.</returns>
+        public Task<bool> IsDebuggerPresentAsync()
+        {
+            if (this.processHandle == null)
+            {
+                throw new InvalidOperationException("TODO");
+            }
+
+            return Task<bool>.Factory.StartNew(() =>
             {
                 const int delayTime = 1000;
-                var passedTime = 0;
                 var failuresCount = 0;
                 var isDebuggerPresent = false;
-                while (failuresCount <= 3 && passedTime <= timeout)
+                while (failuresCount <= 3)
                 {
                     if (!NativeMethods.CheckRemoteDebuggerPresent(this.processHandle.DangerousGetHandle(), ref isDebuggerPresent))
                     {
@@ -405,13 +440,10 @@ namespace PrenatalServiceDebugger
 
                     // Retry after some delay
                     Task.Delay(delayTime).Wait();
-                    passedTime += delayTime;
                 }
 
                 return isDebuggerPresent;
             });
-            task.Wait();
-            return task.Result;
         }
 
         /// <summary>

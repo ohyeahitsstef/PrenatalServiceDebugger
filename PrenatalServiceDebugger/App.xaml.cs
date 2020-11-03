@@ -11,6 +11,7 @@ namespace PrenatalServiceDebugger
     using System.IO;
     using System.Linq;
     using System.Reflection;
+    using System.Threading.Tasks;
     using System.Windows;
 
     /// <summary>
@@ -28,6 +29,8 @@ namespace PrenatalServiceDebugger
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times", Justification = "False-positive: ImageFileExecutionOptionsDebuggerBypass may not be disposed multiple times.")]
         private void StartupHandler(object sender, StartupEventArgs args)
         {
+            // TODO: Idea to workaround the service startup timeout by calling SetServiceStatus() for the service we are debugging.
+
             File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", string.Join(", ", args.Args) + Environment.NewLine);
             try
             {
@@ -106,21 +109,19 @@ namespace PrenatalServiceDebugger
                             File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Unable to start wait window." + Environment.NewLine + e.StackTrace + Environment.NewLine + e.Message + Environment.NewLine);
                         }
 
-                        // TODO: Also wait for waiting process exit (user closed the waiting window on purpose -> just resume service)
-                        bool isDebuggerAttached = debuggeeProcess.WaitForDebugger(SystemUtils.GetServiceTimeout() - 2000);
+                        // Wait for waiting process to exit (user closed the waiting window on purpose -> just resume service)
+                        // or for a debugger to be attached to the debuggee process.
+                        Task<bool>[] tasks = { waitingProcess.HasExitedAsync(), debuggeeProcess.IsDebuggerPresentAsync() };
+                        int index = Task.WaitAny(tasks, SystemUtils.GetServiceTimeout() - 2000);
 
-                        if (isDebuggerAttached)
+                        debuggeeProcess.Resume();
+
+                        // In case a debugger has been attached close the waiting window.
+                        if (index == 1)
                         {
-                            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Resume service." + Environment.NewLine);
-                            debuggeeProcess.Resume();
-                        }
-                        else
-                        {
-                            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Terminate service." + Environment.NewLine);
-                            debuggeeProcess.Terminate();
+                            waitingProcess.Terminate();
                         }
 
-                        waitingProcess.Terminate();
                         Current.Shutdown();
                         return;
                     }
@@ -166,10 +167,6 @@ namespace PrenatalServiceDebugger
                         }
                     }
 
-                    // TODO: Show settings window
-                    //       Things to do in the settings window:
-                    //       1. Check service timeout and prompt user to change it and restart system
-                    // TODO: Test restart when timeout is changed
                     // TODO: remove logs
                     this.window = new MainWindow();
                     this.window.Show();
