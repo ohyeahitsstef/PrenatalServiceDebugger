@@ -45,6 +45,11 @@ namespace PrenatalServiceDebugger
         /// </summary>
         public IList<string> Arguments { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether the process has been started or not.
+        /// </summary>
+        public bool Started { get => this.processHandle != null; }
+
         /// <inheritdoc/>
         public void Dispose()
         {

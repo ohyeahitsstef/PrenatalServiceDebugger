@@ -97,13 +97,19 @@ namespace PrenatalServiceDebugger
 
                     // Wait for waiting process to exit (user closed the waiting window on purpose -> just resume service)
                     // or for a debugger to be attached to the debuggee process.
-                    Task<bool>[] tasks = { waitingProcess.HasExitedAsync(), debuggeeProcess.IsDebuggerPresentAsync() };
-                    int index = Task.WaitAny(tasks, SystemUtils.GetServiceTimeout() - 2000);
+                    var tasks = new List<Task<bool>>();
+                    tasks.Add(debuggeeProcess.IsDebuggerPresentAsync());
+                    if (waitingProcess.Started)
+                    {
+                        tasks.Add(waitingProcess.HasExitedAsync());
+                    }
+
+                    int index = Task.WaitAny(tasks.ToArray(), SystemUtils.GetServiceTimeout() - 2000);
 
                     debuggeeProcess.Resume();
 
                     // In case a debugger has been attached close the waiting window.
-                    if (index == 1)
+                    if (waitingProcess.Started && index == 0)
                     {
                         waitingProcess.Terminate();
                     }
