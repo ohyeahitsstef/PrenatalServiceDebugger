@@ -29,152 +29,131 @@ namespace PrenatalServiceDebugger
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times", Justification = "False-positive: ImageFileExecutionOptionsDebuggerBypass may not be disposed multiple times.")]
         private void StartupHandler(object sender, StartupEventArgs args)
         {
-            // TODO: Idea to workaround the service startup timeout by calling SetServiceStatus() for the service we are debugging.
-
-            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", string.Join(", ", args.Args) + Environment.NewLine);
-            try
+            if (args.Args.Length > 1 && args.Args[0] == "--Debug")
             {
-                if (args.Args.Length > 1 && args.Args[0] == "--Debug")
+                if (!SystemUtils.IsAdministrator() && !SystemUtils.IsLocalSystem())
                 {
-                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Debugging" + Environment.NewLine);
-                    if (!SystemUtils.IsAdministrator() && !SystemUtils.IsLocalSystem())
+                    MessageBox.Show(
+                        (string)Application.Current.FindResource("RequiresAdministrativePrivilegesMessage"),
+                        (string)Application.Current.FindResource("RequiresAdministrativePrivilegesMessageTitle"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    Current.Shutdown();
+                    return;
+                }
+
+                string debuggeeExecutable = args.Args[1];
+                var debuggeeArguments = args.Args.Skip(2);
+                string waitingUiExecutable = Assembly.GetExecutingAssembly().Location;
+                var waitingUiArguments = new List<string> { "--Wait", $"\"{Path.GetFileName(debuggeeExecutable)}\"" };
+
+                using (var debuggeeProcess = new Process(debuggeeExecutable, debuggeeArguments))
+                using (var waitingProcess = new Process(waitingUiExecutable, waitingUiArguments))
+                {
+                    try
                     {
-                        MessageBox.Show(
-                            (string)Application.Current.FindResource("RequiresAdministrativePrivilegesMessage"),
-                            (string)Application.Current.FindResource("RequiresAdministrativePrivilegesMessageTitle"),
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+                        // Bypass ImageFileExecutionOptions.Debugger, so the actual debuggee executable is started.
+                        using (new ImageFileExecutionOptionsDebuggerBypass(Path.GetFileName(debuggeeExecutable)))
+                        {
+                            debuggeeProcess.Start(true);
+                        }
+                    }
+                    catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
+                    {
+                        // Unable to start the debugee.
                         Current.Shutdown();
                         return;
                     }
 
-                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "As System service" + Environment.NewLine);
-
-                    string debuggeeExecutable = args.Args[1];
-                    var debuggeeArguments = args.Args.Skip(2);
-                    string waitingUiExecutable = Assembly.GetExecutingAssembly().Location;
-                    var waitingUiArguments = new List<string> { "--Wait", $"\"{Path.GetFileName(debuggeeExecutable)}\"" };
-
-                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "debuggee proc: " + debuggeeExecutable + " " + string.Join(" ", debuggeeArguments) + Environment.NewLine);
-                    File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "waiting proc: " + waitingUiExecutable + " " + string.Join(" ", waitingUiArguments) + Environment.NewLine);
-
-                    using (var debuggeeProcess = new Process(debuggeeExecutable, debuggeeArguments))
-                    using (var waitingProcess = new Process(waitingUiExecutable, waitingUiArguments))
+                    try
                     {
-                        try
+                        // Start the waiting UI on the user desktop or on Winlogon screen when no user is logged on.
+                        if (SystemUtils.IsLoggedOnUserAvailable())
                         {
-                            // Bypass ImageFileExecutionOptions.Debugger, so the actual debuggee executable is started.
-                            using (new ImageFileExecutionOptionsDebuggerBypass(Path.GetFileName(debuggeeExecutable)))
+                            waitingProcess.StartOnUserDesktop();
+                        }
+                        else
+                        {
+                            // Wait for logon screen to become active
+                            for (int i = 0; i < 10; ++i)
                             {
-                                debuggeeProcess.Start(true);
-                            }
-                        }
-                        catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
-                        {
-                            // Unable to start the debugee
-                            Current.Shutdown();
-                            return;
-                        }
+                                uint activeSessionId = Process.GetActiveConsoleSessionId();
 
-                        try
-                        {
-                            // Start the waiting UI on the user desktop or on Winlogon screen when no user is logged on.
-                            if (SystemUtils.IsLoggedOnUserAvailable())
-                            {
-                                File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "User available" + Environment.NewLine);
-                                waitingProcess.StartOnUserDesktop();
-                            }
-                            else
-                            {
-                                // Wait for logon screen to become active
-                                for (int i = 0; i < 10; ++i)
+                                if (activeSessionId != NativeMethods.InvalidSessionId)
                                 {
-                                    uint activeSessionId = Process.GetActiveConsoleSessionId();
-
-                                    if (activeSessionId != NativeMethods.InvalidSessionId)
-                                    {
-                                        break;
-                                    }
-
-                                    System.Threading.Thread.Sleep(1000);
+                                    break;
                                 }
 
-                                File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Logon screen available" + Environment.NewLine);
-                                waitingProcess.StartOnLogonScreen();
-                            }
-                        }
-                        catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
-                        {
-                            // Too bad, but nothing we can do about it, just omit the waiting dialog.
-                            File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "Unable to start wait window." + Environment.NewLine + e.StackTrace + Environment.NewLine + e.Message + Environment.NewLine);
-                        }
-
-                        // Wait for waiting process to exit (user closed the waiting window on purpose -> just resume service)
-                        // or for a debugger to be attached to the debuggee process.
-                        Task<bool>[] tasks = { waitingProcess.HasExitedAsync(), debuggeeProcess.IsDebuggerPresentAsync() };
-                        int index = Task.WaitAny(tasks, SystemUtils.GetServiceTimeout() - 2000);
-
-                        debuggeeProcess.Resume();
-
-                        // In case a debugger has been attached close the waiting window.
-                        if (index == 1)
-                        {
-                            waitingProcess.Terminate();
-                        }
-
-                        Current.Shutdown();
-                        return;
-                    }
-                }
-                else if (args.Args.Length > 1 && args.Args[0] == "--Wait")
-                {
-                    this.window = new WaitWindow
-                    {
-                        ApplicationName = args.Args.Length > 1 ? args.Args[1] : string.Empty,
-                        TimeWaitedInPercent = 50,
-                    };
-                    this.window.Show();
-                    this.window.Activate();
-                }
-                else
-                {
-                    if (SystemUtils.IsLocalSystem())
-                    {
-                        // If we accidentally got started as a service with invalid command line arguments, just quit.
-                        File.AppendAllText(@"C:\Workbench\operatingtable\pnsd.log", "No args as local system?! Quit!." + Environment.NewLine);
-                        Current.Shutdown();
-                        return;
-                    }
-
-                    if (!SystemUtils.IsAdministrator())
-                    {
-                        // The configuration UI needs to run with elevated privileges.
-                        // therefore, restart the program and run as administrator.
-                        // Note: This is not done with manifest, to be able to start same exe as user from service for the waiting for debugger UI.
-                        using (var process = new Process(Assembly.GetExecutingAssembly().Location, null))
-                        {
-                            try
-                            {
-                                process.StartAsAdmin();
-                            }
-                            catch (InvalidOperationException e)
-                            {
-                                MessageBox.Show($"An unexpected error occurred during program restart.{Environment.NewLine}{e.Message}", "Error restarting program", MessageBoxButton.OK, MessageBoxImage.Error);
+                                System.Threading.Thread.Sleep(1000);
                             }
 
-                            Current.Shutdown();
-                            return;
+                            waitingProcess.StartOnLogonScreen();
                         }
                     }
+                    catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
+                    {
+                        // Too bad, but nothing we can do about it, just omit the waiting dialog.
+                    }
 
-                    // TODO: remove logs
-                    this.window = new MainWindow();
-                    this.window.Show();
+                    // Wait for waiting process to exit (user closed the waiting window on purpose -> just resume service)
+                    // or for a debugger to be attached to the debuggee process.
+                    Task<bool>[] tasks = { waitingProcess.HasExitedAsync(), debuggeeProcess.IsDebuggerPresentAsync() };
+                    int index = Task.WaitAny(tasks, SystemUtils.GetServiceTimeout() - 2000);
+
+                    debuggeeProcess.Resume();
+
+                    // In case a debugger has been attached close the waiting window.
+                    if (index == 1)
+                    {
+                        waitingProcess.Terminate();
+                    }
+
+                    Current.Shutdown();
+                    return;
                 }
             }
-            catch (Exception e)
+            else if (args.Args.Length > 1 && args.Args[0] == "--Wait")
             {
-                File.AppendAllText(@"C:\Workbench\operatingtable\pnsd_err.log", e.ToString() + Environment.NewLine);
+                this.window = new WaitWindow
+                {
+                    ApplicationName = args.Args.Length > 1 ? args.Args[1] : string.Empty,
+                    TimeWaitedInPercent = 50,
+                };
+                this.window.Show();
+                this.window.Activate();
+            }
+            else
+            {
+                if (SystemUtils.IsLocalSystem())
+                {
+                    // If we accidentally got started as a service with invalid command line arguments, just quit.
+                    Current.Shutdown();
+                    return;
+                }
+
+                if (!SystemUtils.IsAdministrator())
+                {
+                    // The configuration UI needs to run with elevated privileges.
+                    // therefore, restart the program and run as administrator.
+                    // Note: This is not done with manifest, to be able to start same exe as user from service for the waiting for debugger UI.
+                    using (var process = new Process(Assembly.GetExecutingAssembly().Location, null))
+                    {
+                        try
+                        {
+                            process.StartAsAdmin();
+                        }
+                        catch (InvalidOperationException e)
+                        {
+                            MessageBox.Show($"An unexpected error occurred during program restart.{Environment.NewLine}{e.Message}", "Error restarting program", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
+
+                        Current.Shutdown();
+                        return;
+                    }
+                }
+
+                this.window = new MainWindow();
+                this.window.Show();
             }
         }
     }
