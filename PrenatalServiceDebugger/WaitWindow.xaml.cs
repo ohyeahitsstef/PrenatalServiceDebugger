@@ -10,8 +10,8 @@ namespace PrenatalServiceDebugger
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Windows;
+    using System.Windows.Input;
     using System.Windows.Media;
-    using System.Windows.Media.Imaging;
     using System.Windows.Threading;
 
     /// <summary>
@@ -53,6 +53,11 @@ namespace PrenatalServiceDebugger
         /// Indicates whether or not the instance is already disposed.
         /// </summary>
         private bool alreadyDisposed;
+
+        /// <summary>
+        /// The command for canceling the waiting window.
+        /// </summary>
+        private ICommand cancelCommand;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WaitWindow"/> class.
@@ -107,6 +112,17 @@ namespace PrenatalServiceDebugger
             }
         }
 
+        /// <summary>
+        /// Gets the command for canceling the waiting window.
+        /// </summary>
+        public ICommand CancelCommand
+        {
+            get
+            {
+                return this.cancelCommand ?? (this.cancelCommand = new DelegateCommand(() => this.ExecuteCancel(), () => true));
+            }
+        }
+
         /// <inheritdoc/>
         public void Dispose()
         {
@@ -147,6 +163,14 @@ namespace PrenatalServiceDebugger
             }
 
             this.TimeWaitedInPercent = (this.elapsedTime * 100) / this.windowTimeout;
+        }
+
+        /// <summary>
+        /// Cancels the waiting window (by closing it).
+        /// </summary>
+        private void ExecuteCancel()
+        {
+            this.Close();
         }
     }
 }

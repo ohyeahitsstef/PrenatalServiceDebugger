@@ -13,6 +13,7 @@
             <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="Waiting for debugger to attach to process:" VerticalAlignment="Top" Margin="12,7,0,5"/>
             <TextBlock HorizontalAlignment="Left" TextWrapping="Wrap" Text="{Binding ApplicationName}" VerticalAlignment="Top" Margin="12,0,0,7"/>
             <ProgressBar Height="15" VerticalAlignment="Top" Margin="10,0,10,10" Value="{Binding TimeWaitedInPercent}"/>
+            <Button Command="{Binding CancelCommand}" Content="_Cancel" VerticalAlignment="Bottom" Margin="7,0,10,10" Padding="7,1" HorizontalAlignment="Right"/>
         </StackPanel>
     </DockPanel>
 </Window>
