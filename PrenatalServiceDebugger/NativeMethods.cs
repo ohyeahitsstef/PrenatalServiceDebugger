@@ -59,9 +59,13 @@ namespace PrenatalServiceDebugger
             TOKEN_ADJUST_DEFAULT;
 
         internal const int TOKEN_EXECUTE = STANDARD_RIGHTS_EXECUTE;
+
+        internal const int ERROR_NOT_FOUND = 1168;
+
         internal const int SE_PRIVILEGE_DISABLED = 0x00000000;
         internal const int SE_PRIVILEGE_ENABLED = 0x00000002;
         internal const string SE_SHUTDOWN_PRIVILEGE_NAME = "SeShutdownPrivilege";
+
         internal static readonly IntPtr WTS_CURRENT_SERVER_HANDLE = IntPtr.Zero;
 
         internal enum SHSTOCKICONID : uint
@@ -397,7 +401,8 @@ namespace PrenatalServiceDebugger
         internal static extern bool DestroyIcon(
             IntPtr hIcon);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
+        // Configure CloseHandle to not call SetLastError, for more convenient usage of Win32Exception.
+        [DllImport("kernel32.dll", SetLastError = false)]
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool CloseHandle(
             IntPtr hObject);
@@ -490,7 +495,8 @@ namespace PrenatalServiceDebugger
             uint sessionId,
             out IntPtr phToken);
 
-        [DllImport("wtsapi32.dll")]
+        // Configure WTSFreeMemory to not call SetLastError, for more convenient usage of Win32Exception.
+        [DllImport("wtsapi32.dll", SetLastError = false)]
         internal static extern void WTSFreeMemory(
             IntPtr pMemory);
 

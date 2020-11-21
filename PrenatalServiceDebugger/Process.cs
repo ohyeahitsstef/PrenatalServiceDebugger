@@ -130,14 +130,14 @@ namespace PrenatalServiceDebugger
         {
             if (!SystemUtils.IsLocalSystem())
             {
-                throw new InvalidOperationException("TODO");
+                throw new InvalidOperationException("Unable to start process. Requires local system privileges.");
             }
 
             uint sessionId = GetActiveConsoleSessionId();
 
             if (sessionId == NativeMethods.InvalidSessionId)
             {
-                throw new Win32Exception($"No active console session found.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"No active console session found.");
             }
 
             // Get the user token. This requires certain privileges only held by Local System.
@@ -145,7 +145,7 @@ namespace PrenatalServiceDebugger
             bool tokenReceived = NativeMethods.WTSQueryUserToken(sessionId, out token);
             if (!tokenReceived)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not acquire token for session {sessionId}.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not query user token for session {sessionId}.");
             }
 
             // Get user name from the session.
@@ -154,23 +154,21 @@ namespace PrenatalServiceDebugger
             bool nameReceived = NativeMethods.WTSQuerySessionInformation(NativeMethods.WTS_CURRENT_SERVER_HANDLE, sessionId, NativeMethods.WTS_INFO_CLASS.WTSUserName, out userNameBuffer, out userNameBufferSize);
             if (!nameReceived)
             {
-                int error = Marshal.GetLastWin32Error();
                 NativeMethods.CloseHandle(token);
-                throw new Win32Exception(error, $"Could not query user name for session {sessionId}.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not query user name for session {sessionId}.");
             }
 
             // Get the user profile with the token.
             var profile = default(NativeMethods.PROFILEINFO);
             profile.dwSize = Marshal.SizeOf(profile);
             profile.lpUserName = Marshal.PtrToStringAnsi(userNameBuffer);
+            NativeMethods.WTSFreeMemory(userNameBuffer);
 
             bool isProfileLoaded = NativeMethods.LoadUserProfileW(token, ref profile);
             if (!isProfileLoaded)
             {
-                int error = Marshal.GetLastWin32Error();
-                NativeMethods.WTSFreeMemory(userNameBuffer);
                 NativeMethods.CloseHandle(token);
-                throw new Win32Exception(error, $"Could not load user profile for session {sessionId}.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not load profile for user {profile.lpUserName} in session {sessionId}.");
             }
 
             // Get the user environment with the token.
@@ -180,7 +178,6 @@ namespace PrenatalServiceDebugger
             {
                 int error = Marshal.GetLastWin32Error();
                 NativeMethods.UnloadUserProfile(token, profile.hProfile);
-                NativeMethods.WTSFreeMemory(userNameBuffer);
                 NativeMethods.CloseHandle(token);
 
                 throw new Win32Exception(error, $"Could not create environment block for user {profile.lpUserName} in session {sessionId}.");
@@ -215,19 +212,19 @@ namespace PrenatalServiceDebugger
                 profileDir,
                 ref startupInfo,
                 out processInfo);
+
             if (!processCreated)
             {
                 int error = Marshal.GetLastWin32Error();
                 NativeMethods.DestroyEnvironmentBlock(environment);
                 NativeMethods.UnloadUserProfile(token, profile.hProfile);
-                NativeMethods.WTSFreeMemory(userNameBuffer);
                 NativeMethods.CloseHandle(token);
-                throw new Win32Exception(error, $"Could not create process for session {sessionId} and user {profile.lpUserName}.");
+
+                throw new Win32Exception(error, $"Could not create process for user {profile.lpUserName} in session {sessionId}.");
             }
 
             NativeMethods.DestroyEnvironmentBlock(environment);
             NativeMethods.UnloadUserProfile(token, profile.hProfile);
-            NativeMethods.WTSFreeMemory(userNameBuffer);
             NativeMethods.CloseHandle(token);
 
             this.processHandle = new SafeClosableHandle(processInfo.hProcess);
@@ -241,14 +238,14 @@ namespace PrenatalServiceDebugger
         {
             if (!SystemUtils.IsLocalSystem())
             {
-                throw new InvalidOperationException("TODO");
+                throw new InvalidOperationException("Unable to start process. Requires local system privileges.");
             }
 
             uint sessionId = GetActiveConsoleSessionId();
 
             if (sessionId == NativeMethods.InvalidSessionId)
             {
-                throw new Win32Exception($"No active console session found.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"No active console session found.");
             }
 
             // Obtain the process ID of the winlogon process that is running within the currently active session.
@@ -264,11 +261,15 @@ namespace PrenatalServiceDebugger
 
             if (winlogonPid == 0)
             {
-                throw new Win32Exception($"Winlogon process not found.");
+                throw new Win32Exception(NativeMethods.ERROR_NOT_FOUND, $"Winlogon process not found.");
             }
 
             // Obtain a handle to the winlogon process.
             var winlogonHandle = NativeMethods.OpenProcess(NativeMethods.ACCESS_MASK.MAXIMUM_ALLOWED, false, winlogonPid);
+            if (winlogonHandle == IntPtr.Zero)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open process.");
+            }
 
             // Get the token of the winlogon process.
             IntPtr currentToken = IntPtr.Zero;
@@ -280,7 +281,7 @@ namespace PrenatalServiceDebugger
             NativeMethods.CloseHandle(winlogonHandle);
             if (!processTokenOpened)
             {
-                throw new Win32Exception();
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open process token.");
             }
 
             // Duplicate token
@@ -299,7 +300,7 @@ namespace PrenatalServiceDebugger
             NativeMethods.CloseHandle(currentToken);
             if (!tokenDuplicated)
             {
-                throw new Win32Exception();
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not duplicate process token.");
             }
 
             // Finally create process
@@ -332,7 +333,7 @@ namespace PrenatalServiceDebugger
 
             if (!processCreated)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not create process for session {sessionId} on desktop {startupInfo.lpDesktop}.");
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not create process on desktop {startupInfo.lpDesktop} in session {sessionId}.");
             }
 
             this.processHandle = new SafeClosableHandle(processInfo.hProcess);
@@ -352,7 +353,7 @@ namespace PrenatalServiceDebugger
             int result = NativeMethods.SuspendThread(this.threadHandle.DangerousGetHandle());
             if (result == -1)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not suspend process.");
             }
         }
 
@@ -369,7 +370,7 @@ namespace PrenatalServiceDebugger
             int result = NativeMethods.ResumeThread(this.threadHandle.DangerousGetHandle());
             if (result == -1)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error());
+                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not resume process.");
             }
         }
 
@@ -381,7 +382,7 @@ namespace PrenatalServiceDebugger
         {
             if (this.processHandle == null)
             {
-                throw new InvalidOperationException("TODO");
+                throw new InvalidOperationException("Invalid process.");
             }
 
             return Task<bool>.Factory.StartNew(() =>
@@ -418,7 +419,7 @@ namespace PrenatalServiceDebugger
         {
             if (this.processHandle == null)
             {
-                throw new InvalidOperationException("TODO");
+                throw new InvalidOperationException("Invalid process.");
             }
 
             return Task<bool>.Factory.StartNew(() =>
