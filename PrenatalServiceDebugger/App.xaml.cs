@@ -114,6 +114,10 @@ namespace PrenatalServiceDebugger
                         waitingProcess.Terminate();
                     }
 
+                    // Wait for the debugee process to exit. This is required since exiting the current process would also exit the debugee
+                    // as it is a child process - TODO: #5
+                    debuggeeProcess.HasExitedAsync().Wait();
+
                     Current.Shutdown();
                     return;
                 }
