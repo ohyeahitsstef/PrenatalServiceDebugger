@@ -256,11 +256,12 @@ namespace PrenatalServiceDebugger
             // Obtain the process ID of the winlogon process that is running within the currently active session.
             uint winlogonPid = 0;
             System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("winlogon");
-            foreach (var p in processes)
+            foreach (var process in processes)
             {
-                if ((uint)p.SessionId == sessionId)
+                if ((uint)process.SessionId == sessionId)
                 {
-                    winlogonPid = (uint)p.Id;
+                    winlogonPid = (uint)process.Id;
+                    break;
                 }
             }
 
