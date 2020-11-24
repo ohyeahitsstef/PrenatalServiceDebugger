@@ -114,8 +114,7 @@ namespace PrenatalServiceDebugger
                         waitingProcess.Terminate();
                     }
 
-                    // Wait for the debugee process to exit. This is required since exiting the current process would also exit the debugee
-                    // as it is a child process - TODO: #5
+                    // Wait for the debugee process to exit. This is required since exiting the current process would also exit the debugee.
                     debuggeeProcess.HasExitedAsync().Wait();
 
                     Current.Shutdown();
@@ -145,7 +144,7 @@ namespace PrenatalServiceDebugger
                 {
                     // The configuration UI needs to run with elevated privileges.
                     // therefore, restart the program and run as administrator.
-                    // Note: This is not done with manifest, to be able to start same exe as user from service for the waiting for debugger UI.
+                    // Note: This is not done with manifest, to be able to start same executable as user from service (for the waiting UI).
                     using (var process = new Process(Assembly.GetExecutingAssembly().Location, null))
                     {
                         try
