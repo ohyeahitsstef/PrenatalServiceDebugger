@@ -74,8 +74,8 @@ namespace PrenatalServiceDebugger
                         }
                         else
                         {
-                            // Wait for logon screen to become active
-                            for (int i = 0; i < 10; ++i)
+                            // Wait for logon screen to become active (max. wait time 120 seconds)
+                            for (int i = 0; i < 120; ++i)
                             {
                                 uint activeSessionId = Process.GetActiveConsoleSessionId();
 
