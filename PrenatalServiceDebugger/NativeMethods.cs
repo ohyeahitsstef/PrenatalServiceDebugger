@@ -61,10 +61,12 @@ namespace PrenatalServiceDebugger
         internal const int TOKEN_EXECUTE = STANDARD_RIGHTS_EXECUTE;
 
         internal const int ERROR_NOT_FOUND = 1168;
+        internal const int PROC_THREAD_ATTRIBUTE_PARENT_PROCESS = 0x00020000;
 
         internal const int SE_PRIVILEGE_DISABLED = 0x00000000;
         internal const int SE_PRIVILEGE_ENABLED = 0x00000002;
         internal const string SE_SHUTDOWN_PRIVILEGE_NAME = "SeShutdownPrivilege";
+        internal const string SE_DEBUG_PRIVILEGE_NAME = "SeDebugPrivilege";
 
         internal static readonly IntPtr WTS_CURRENT_SERVER_HANDLE = IntPtr.Zero;
 
@@ -310,6 +312,8 @@ namespace PrenatalServiceDebugger
             WINSTA_ENUMERATE = 0x00000100,
             WINSTA_READSCREEN = 0x00000200,
             WINSTA_ALL_ACCESS = 0x0000037f,
+            PROCESS_CREATE_PROCESS = 0x00000080,
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000,
         }
 
         internal enum TOKEN_TYPE : uint
@@ -430,7 +434,7 @@ namespace PrenatalServiceDebugger
             CreateProcessFlags dwCreationFlags,
             IntPtr lpEnvironment,
             string lpCurrentDirectory,
-            ref STARTUPINFO lpStartupInfo,
+            ref STARTUPINFOEX lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
 
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -453,6 +457,30 @@ namespace PrenatalServiceDebugger
             string lpCurrentDirectory,
             ref STARTUPINFO lpStartupInfo,
             out PROCESS_INFORMATION lpProcessInformation);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool UpdateProcThreadAttribute(
+        IntPtr lpAttributeList,
+        uint dwFlags,
+        IntPtr Attribute,
+        IntPtr lpValue,
+        uint cbSize,
+        IntPtr lpPreviousValue,
+        IntPtr lpReturnSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool InitializeProcThreadAttributeList(
+            IntPtr lpAttributeList,
+            uint dwAttributeCount,
+            uint dwFlags,
+            ref IntPtr lpSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        internal static extern bool DeleteProcThreadAttributeList(
+            IntPtr lpAttributeList);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern int ResumeThread(
@@ -631,6 +659,13 @@ namespace PrenatalServiceDebugger
             internal IntPtr hStdInput;
             internal IntPtr hStdOutput;
             internal IntPtr hStdError;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct STARTUPINFOEX
+        {
+            public STARTUPINFO StartupInfo;
+            public IntPtr lpAttributeList;
         }
 
         [StructLayout(LayoutKind.Sequential)]

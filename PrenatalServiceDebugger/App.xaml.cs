@@ -52,10 +52,27 @@ namespace PrenatalServiceDebugger
                 {
                     try
                     {
+                        System.Threading.Thread.Sleep(15000);
+
+                        // Obtain process id of the servcie control manager (services.exe)
+                        int servicesPid = 0;
+                        System.Diagnostics.Process[] processes = System.Diagnostics.Process.GetProcessesByName("services");
+                        foreach (var process in processes)
+                        {
+                            if (process.SessionId == 0)
+                            {
+                                servicesPid = process.Id;
+
+                                // Set the debug privilege to be able to interact with the protected service control manager process.
+                                SystemUtils.SetPrivilege(NativeMethods.SE_DEBUG_PRIVILEGE_NAME, true);
+                                break;
+                            }
+                        }
+
                         // Bypass ImageFileExecutionOptions.Debugger, so the actual debuggee executable is started.
                         using (new ImageFileExecutionOptionsDebuggerBypass(Path.GetFileName(debuggeeExecutable)))
                         {
-                            debuggeeProcess.Start(true);
+                            debuggeeProcess.Start(true, servicesPid);
                         }
                     }
                     catch (Exception e) when (e is InvalidOperationException || e is Win32Exception)
@@ -115,7 +132,8 @@ namespace PrenatalServiceDebugger
                     }
 
                     // Wait for the debugee process to exit. This is required since exiting the current process would also exit the debugee.
-                    debuggeeProcess.HasExitedAsync().Wait();
+                    // #7 We actually do no longer need this process as the debugee has been resumed.
+                    // debuggeeProcess.HasExitedAsync().Wait();
 
                     Current.Shutdown();
                     return;

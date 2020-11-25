@@ -184,12 +184,35 @@ namespace PrenatalServiceDebugger
         /// <param name="timeout">The time to be waited before the restart happens.</param>
         public static void Restart(string message, TimeSpan timeout)
         {
-            var luid = default(NativeMethods.LUID);
-            var privilegeFound = NativeMethods.LookupPrivilegeValueW(null, NativeMethods.SE_SHUTDOWN_PRIVILEGE_NAME, ref luid);
-            if (!privilegeFound)
+            SetPrivilege(NativeMethods.SE_SHUTDOWN_PRIVILEGE_NAME, true);
+
+            var restartInitiated = NativeMethods.InitiateSystemShutdownExW(
+                null,
+                message,
+                Convert.ToUInt32(timeout.TotalSeconds),
+                false,
+                true,
+                NativeMethods.ShutdownReason.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.ShutdownReason.SHTDN_REASON_MINOR_RECONFIG | NativeMethods.ShutdownReason.SHTDN_REASON_FLAG_PLANNED);
+
+            if (!restartInitiated)
             {
                 int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, $"Could not find value for privilege {NativeMethods.SE_SHUTDOWN_PRIVILEGE_NAME}.");
+                throw new Win32Exception(error, $"Could not initiate restart.");
+            }
+        }
+
+        /// <summary>
+        /// Sets a special process privilege.
+        /// </summary>
+        /// <param name="privilegeName">The name of the privilege to be set.</param>
+        /// <param name="enable">Indicates whether to enable or disable the privilege.</param>
+        public static void SetPrivilege(string privilegeName, bool enable)
+        {
+            var luid = default(NativeMethods.LUID);
+            var privilegeFound = NativeMethods.LookupPrivilegeValueW(null, privilegeName, ref luid);
+            if (!privilegeFound)
+            {
+                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not find value for privilege {privilegeName}.");
             }
 
             var privilegesToken = new NativeMethods.PrivilegesToken
@@ -198,7 +221,7 @@ namespace PrenatalServiceDebugger
                 {
                     luid.LowPart,
                     luid.HighPart,
-                    NativeMethods.SE_PRIVILEGE_ENABLED,
+                    enable ? NativeMethods.SE_PRIVILEGE_ENABLED : NativeMethods.SE_PRIVILEGE_DISABLED,
                 },
                 PrivilegeCount = 1,
             };
@@ -208,19 +231,13 @@ namespace PrenatalServiceDebugger
 
             if (process.Handle == IntPtr.Zero)
             {
-                throw new Win32Exception(0, $"Could not get handle to current process.");
+                throw new Win32Exception(NativeMethods.ERROR_NOT_FOUND, $"Could not get handle to current process.");
             }
 
             var processTokenOpened = NativeMethods.OpenProcessToken(
                 process.Handle,
                 NativeMethods.TOKEN_QUERY | NativeMethods.TOKEN_ADJUST_PRIVILEGES,
                 out tokenHandle);
-
-            if (!processTokenOpened)
-            {
-                int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, $"Could not open process token.");
-            }
 
             var bufferPtr = Marshal.AllocHGlobal(Marshal.SizeOf(privilegesToken));
             Marshal.StructureToPtr(privilegesToken, bufferPtr, true);
@@ -243,20 +260,6 @@ namespace PrenatalServiceDebugger
             if (!tokenPrivilegesAdjusted || errorOfAdjustTokenPrivileges != 0)
             {
                 throw new Win32Exception(errorOfAdjustTokenPrivileges, $"Could not adjust token privileges.");
-            }
-
-            var restartInitiated = NativeMethods.InitiateSystemShutdownExW(
-                null,
-                message,
-                Convert.ToUInt32(timeout.TotalSeconds),
-                false,
-                true,
-                NativeMethods.ShutdownReason.SHTDN_REASON_MAJOR_OPERATINGSYSTEM | NativeMethods.ShutdownReason.SHTDN_REASON_MINOR_RECONFIG | NativeMethods.ShutdownReason.SHTDN_REASON_FLAG_PLANNED);
-
-            if (!restartInitiated)
-            {
-                int error = Marshal.GetLastWin32Error();
-                throw new Win32Exception(error, $"Could not initiate restart.");
             }
         }
 

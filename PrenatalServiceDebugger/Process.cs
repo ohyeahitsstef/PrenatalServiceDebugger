@@ -62,22 +62,70 @@ namespace PrenatalServiceDebugger
         /// </summary>
         public void Start()
         {
-            this.Start(false);
+            this.Start(false, 0);
         }
 
         /// <summary>
         /// Starts the process either suspended or not.
         /// </summary>
         /// <param name="suspended">Indicates whether the process is started suspended or not.</param>
-        public void Start(bool suspended)
+        /// <param name="parentProcessId">The process id of the parent of the new process.</param>
+        public void Start(bool suspended, int parentProcessId)
         {
-            NativeMethods.CreateProcessFlags creationFlags = NativeMethods.CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT;
+            NativeMethods.CreateProcessFlags creationFlags = NativeMethods.CreateProcessFlags.CREATE_UNICODE_ENVIRONMENT
+                | NativeMethods.CreateProcessFlags.CREATE_NEW_CONSOLE
+                | NativeMethods.CreateProcessFlags.EXTENDED_STARTUPINFO_PRESENT;
+
             if (suspended)
             {
                 creationFlags |= NativeMethods.CreateProcessFlags.CREATE_SUSPENDED;
             }
 
-            var startupInfo = default(NativeMethods.STARTUPINFO);
+            var startupInfo = default(NativeMethods.STARTUPINFOEX);
+            startupInfo.StartupInfo.cb = Marshal.SizeOf(startupInfo);
+
+            IntPtr parentHandleValue = IntPtr.Zero;
+
+            if (parentProcessId > 0)
+            {
+                var lpSize = IntPtr.Zero;
+                var success = NativeMethods.InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref lpSize);
+                if (success || lpSize == IntPtr.Zero)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not query attribute list size.");
+                }
+
+                startupInfo.lpAttributeList = Marshal.AllocHGlobal(lpSize);
+                success = NativeMethods.InitializeProcThreadAttributeList(startupInfo.lpAttributeList, 1, 0, ref lpSize);
+                if (!success)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not initialize attribute list.");
+                }
+
+                var parentHandle = NativeMethods.OpenProcess(NativeMethods.ACCESS_MASK.PROCESS_CREATE_PROCESS, false, (uint)parentProcessId);
+                if (parentHandle == IntPtr.Zero)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not open parent process.");
+                }
+
+                // This value must not be freed until the attribute list is destroyed (DeleteProcThreadAttributeList)
+                parentHandleValue = Marshal.AllocHGlobal(IntPtr.Size);
+                Marshal.WriteIntPtr(parentHandleValue, parentHandle);
+
+                success = NativeMethods.UpdateProcThreadAttribute(
+                    startupInfo.lpAttributeList,
+                    0,
+                    (IntPtr)NativeMethods.PROC_THREAD_ATTRIBUTE_PARENT_PROCESS,
+                    parentHandleValue,
+                    (uint)IntPtr.Size,
+                    IntPtr.Zero,
+                    IntPtr.Zero);
+                if (!success)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not update parent process.");
+                }
+            }
+
             var processInfo = default(NativeMethods.PROCESS_INFORMATION);
 
             bool processCreated = NativeMethods.CreateProcessW(
@@ -92,9 +140,20 @@ namespace PrenatalServiceDebugger
                 ref startupInfo,
                 out processInfo);
 
+            var processCreatedError = Marshal.GetLastWin32Error();
+
+            // Free the attribute list
+            if (startupInfo.lpAttributeList != IntPtr.Zero)
+            {
+                NativeMethods.DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+                Marshal.FreeHGlobal(startupInfo.lpAttributeList);
+            }
+
+            Marshal.FreeHGlobal(parentHandleValue);
+
             if (!processCreated)
             {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not create process.");
+                throw new Win32Exception(processCreatedError, "Could not create process.");
             }
 
             this.processHandle = new SafeClosableHandle(processInfo.hProcess);
