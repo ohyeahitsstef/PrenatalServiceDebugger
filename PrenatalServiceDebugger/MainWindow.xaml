@@ -32,9 +32,24 @@
         </StackPanel>
         <Label Target="{Binding ElementName=ServiceList}" Content="_Services available for prenatal debugging:" DockPanel.Dock="Top"/>
         <ListView Name="ServiceList" DockPanel.Dock="Top" ItemsSource="{Binding Services}" MaxHeight="450" MaxWidth="510" SelectionMode="Single" TextSearch.TextPath="DisplayName">
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListView.ItemContainerStyle>
             <ListView.View>
                 <GridView >
-                    <GridViewColumn DisplayMemberBinding="{Binding DisplayName}" Header="Service" Width="450"/>
+                    <GridViewColumn Header="Service" Width="450">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}">
+                                    <TextBlock.InputBindings>
+                                        <MouseBinding Gesture="LeftDoubleClick" Command="{Binding ToggleDebuggerCommand, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}" CommandParameter="{Binding}"/>
+                                    </TextBlock.InputBindings>
+                                </TextBlock>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
                     <GridViewColumn Header="Debug" Width="Auto">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>

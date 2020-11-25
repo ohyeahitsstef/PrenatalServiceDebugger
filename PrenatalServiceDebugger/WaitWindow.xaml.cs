@@ -119,7 +119,7 @@ namespace PrenatalServiceDebugger
         {
             get
             {
-                return this.cancelCommand ?? (this.cancelCommand = new DelegateCommand(() => this.ExecuteCancel(), () => true));
+                return this.cancelCommand ?? (this.cancelCommand = new DelegateCommand((x) => this.ExecuteCancel(), (x) => true));
             }
         }
 
