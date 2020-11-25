@@ -13,15 +13,15 @@ namespace PrenatalServiceDebugger
     /// </summary>
     internal class DelegateCommand : ICommand
     {
-        private readonly Action execute;
-        private readonly Func<bool> canExecute;
+        private readonly Action<object> execute;
+        private readonly Func<object, bool> canExecute;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DelegateCommand"/> class.
         /// </summary>
         /// <param name="execute">The action that should be performed when executing the command.</param>
         /// <param name="canExecute">The functor that decides whether the command can be executed or not.</param>
-        public DelegateCommand(Action execute, Func<bool> canExecute)
+        public DelegateCommand(Action<object> execute, Func<object, bool> canExecute)
             {
                 this.execute = execute;
                 this.canExecute = canExecute;
@@ -33,13 +33,13 @@ namespace PrenatalServiceDebugger
         /// <inheritdoc/>
         public bool CanExecute(object parameter)
         {
-            return this.canExecute();
+            return this.canExecute(parameter);
         }
 
         /// <inheritdoc/>
         public void Execute(object parameter)
         {
-            this.execute();
+            this.execute(parameter);
         }
 
         /// <summary>

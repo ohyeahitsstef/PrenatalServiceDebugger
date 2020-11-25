@@ -49,6 +49,11 @@ namespace PrenatalServiceDebugger
         private ICommand setServiceTimeoutCommand;
 
         /// <summary>
+        /// The command for toggling the debugger.
+        /// </summary>
+        private ICommand toggleDebuggerCommand;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class.
         /// </summary>
         public MainWindow()
@@ -124,7 +129,18 @@ namespace PrenatalServiceDebugger
         {
             get
             {
-                return this.setServiceTimeoutCommand ?? (this.setServiceTimeoutCommand = new DelegateCommand(() => this.ExecuteSetServiceTimeout(), () => true));
+                return this.setServiceTimeoutCommand ?? (this.setServiceTimeoutCommand = new DelegateCommand((x) => this.ExecuteSetServiceTimeout(), (x) => true));
+            }
+        }
+
+        /// <summary>
+        /// Gets the command for toggling the debugger.
+        /// </summary>
+        public ICommand ToggleDebuggerCommand
+        {
+            get
+            {
+                return this.toggleDebuggerCommand ?? (this.toggleDebuggerCommand = new DelegateCommand((x) => ExecuteToggleDebugger(x), (x) => true));
             }
         }
 
@@ -162,6 +178,22 @@ namespace PrenatalServiceDebugger
             }
 
             return services.OrderBy(x => x.DisplayName).ToList();
+        }
+
+        /// <summary>
+        /// Toggle the debugger check box in the UI.
+        /// </summary>
+        /// <param name="parameter">The parameter from Command.Execute().</param>
+        private static void ExecuteToggleDebugger(object parameter)
+        {
+            var serviceModel = parameter as ServiceModel;
+
+            if (serviceModel == null)
+            {
+                return;
+            }
+
+            serviceModel.IsDebuggerSet = !serviceModel.IsDebuggerSet;
         }
 
         /// <summary>
