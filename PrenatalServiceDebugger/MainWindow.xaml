@@ -1,0 +1,49 @@
+﻿<Window x:Class="PrenatalServiceDebugger.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:PrenatalServiceDebugger"
+        mc:Ignorable="d"
+        Title="Prenatal Service Debugger" SizeToContent="WidthAndHeight" MinHeight="436" MinWidth="536" ResizeMode="NoResize"
+        DataContext="{Binding RelativeSource={RelativeSource Self}}">
+    <DockPanel Margin="10">
+        <Border Name="infoField" BorderThickness="0,0,0,1"  DockPanel.Dock="Top" Margin="-10,-10,-10,10" >
+            <Border.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.InfoColorKey}}"/>
+            </Border.Background>
+            <Border.BorderBrush>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ActiveBorderColorKey}}"/>
+            </Border.BorderBrush>
+            <StackPanel Orientation="Horizontal" Margin="10,5,5,5" IsEnabled="{Binding ElementName=UseCustomServiceTimeoutCheckBox, Path=IsChecked}">
+                <Image Source="{Binding InfoImage}" Stretch="None" VerticalAlignment="Top"/>
+                <TextBlock Text="Make sure to set the timeout for the service start-up to a value that gives you enough time for debugging before the service control manager kills the service." Margin="10,0,0,0" MaxWidth="490" TextWrapping="Wrap">
+                    <TextBlock.Foreground>
+                        <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.InfoTextColorKey}}"/>
+                    </TextBlock.Foreground>
+                </TextBlock>
+            </StackPanel>
+        </Border>
+        <CheckBox Name="UseCustomServiceTimeoutCheckBox" Content="_Use a custom timeout for service start-up." DockPanel.Dock="Top" Margin="0,0,0,7" IsChecked="{Binding UseCustomServiceTimeout}"/>
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="10,0,0,7" IsEnabled="{Binding ElementName=UseCustomServiceTimeoutCheckBox, Path=IsChecked}">
+            <Label Target="{Binding ElementName=CustomServiceTimeoutTextBox}" Content="_Timeout in ms:" VerticalAlignment="Center"/>
+            <TextBox Name="CustomServiceTimeoutTextBox" TextWrapping="Wrap" Text="{Binding CustomServiceTimeout}" Width="120" VerticalAlignment="Center" RenderTransformOrigin="0,0"/>
+            <Button Command="{Binding SetServiceTimeoutCommand}" Content="_Set..." VerticalAlignment="Center" Margin="7,0,0,0" Padding="7,1"/>
+        </StackPanel>
+        <Label Target="{Binding ElementName=ServiceList}" Content="_Services available for prenatal debugging:" DockPanel.Dock="Top"/>
+        <ListView Name="ServiceList" DockPanel.Dock="Top" ItemsSource="{Binding Services}" MaxHeight="450" MaxWidth="510" SelectionMode="Single" TextSearch.TextPath="DisplayName">
+            <ListView.View>
+                <GridView >
+                    <GridViewColumn DisplayMemberBinding="{Binding DisplayName}" Header="Service" Width="450"/>
+                    <GridViewColumn Header="Debug" Width="Auto">
+                        <GridViewColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding IsDebuggerSet}"></CheckBox>
+                            </DataTemplate>
+                        </GridViewColumn.CellTemplate>
+                    </GridViewColumn>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </DockPanel>
+</Window>
